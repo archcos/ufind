@@ -102,19 +102,11 @@ class HomePage extends StatelessWidget {
                 ),
                 // Navigation Items
                 ListTile(
-                  leading: const Icon(Icons.info),
-                  title: const Text('About Us'),
+                  leading: const Icon(Icons.account_circle),
+                  title: const Text('My Account'),
                   onTap: () {
-                    // Navigate to About Us page
-                    Navigator.pushNamed(context, '/about-us');
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.contact_mail),
-                  title: const Text('Contact Us'),
-                  onTap: () {
-                    // Navigate to Contact Us page
-                    Navigator.pushNamed(context, '/contact-us');
+                    // Navigate to My Account page
+                    Navigator.pushNamed(context, '/profile');
                   },
                 ),
                 ListTile(
@@ -133,20 +125,29 @@ class HomePage extends StatelessWidget {
                     Navigator.pushNamed(context, '/homepage');
                   },
                 ),
-                ListTile(
-                  leading: const Icon(Icons.account_circle),
-                  title: const Text('My Account'),
-                  onTap: () {
-                    // Navigate to My Account page
-                    Navigator.pushNamed(context, '/profile');
-                  },
-                ),
+
                 ListTile(
                   leading: const Icon(Icons.view_list),
                   title: const Text('View My Ticket'),
                   onTap: () {
                     // Navigate to View My Ticket page
                     Navigator.pushNamed(context, '/homepage');
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.info),
+                  title: const Text('About Us'),
+                  onTap: () {
+                    // Navigate to About Us page
+                    Navigator.pushNamed(context, '/about-us');
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.contact_mail),
+                  title: const Text('Contact Us'),
+                  onTap: () {
+                    // Navigate to Contact Us page
+                    Navigator.pushNamed(context, '/contact-us');
                   },
                 ),
                 ListTile(

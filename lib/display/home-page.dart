@@ -31,43 +31,36 @@ class HomePage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,  // Makes the AppBar transparent
         elevation: 0,  // Removes the shadow of the AppBar
-        leading: IconButton(
-          icon: const Icon(Icons.menu, color: Colors.black),  // Menu icon
-          onPressed: () {
-            // Use the Scaffold key to open the drawer
-            _scaffoldKey.currentState?.openDrawer();
+        leading: PopupMenuButton<String>( // Move CircleAvatar to leading section
+          icon: const CircleAvatar(
+            radius: 20,
+            backgroundImage: AssetImage('assets/images/profile.jpg'),  // Replace with your profile image
+          ),
+          onSelected: (String value) {
+            if (value == 'profile') {
+              // Navigate to profile page when profile is selected
+              Navigator.pushNamed(context, '/profile');
+            } else if (value == 'logout') {
+              // Perform logout when logout is selected
+              _logout(context);
+            }
           },
+          itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+            const PopupMenuItem<String>(
+              value: 'profile',
+              child: Text('Open Profile'),
+            ),
+            const PopupMenuItem<String>(
+              value: 'logout',
+              child: Text('Logout'),
+            ),
+          ],
         ),
         actions: [
-          // Profile picture icon in the trailing section
-          PopupMenuButton<String>(
-            icon: const CircleAvatar(
-              radius: 20,
-              backgroundImage: AssetImage('assets/images/profile.jpg'),  // Replace with your profile image
-            ),
-            onSelected: (String value) {
-              if (value == 'profile') {
-                // Navigate to profile page when profile is selected
-                Navigator.pushNamed(context, '/profile');
-              } else if (value == 'logout') {
-                // Perform logout when logout is selected
-                _logout(context);
-              }
-            },
-            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-              const PopupMenuItem<String>(
-                value: 'profile',
-                child: Text('Open Profile'),
-              ),
-              const PopupMenuItem<String>(
-                value: 'logout',
-                child: Text('Logout'),
-              ),
-            ],
-          ),
+          // You can add additional actions here if needed
         ],
       ),
-      drawer: FutureBuilder<String>( // Drawer to display the user's name
+      endDrawer: FutureBuilder<String>( // Use endDrawer to open the drawer from the right
         future: _getUserFullName(), // Fetch the user's full name
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -88,7 +81,7 @@ class HomePage extends StatelessWidget {
             child: ListView(
               padding: EdgeInsets.zero,
               children: <Widget>[
-                // Drawer Header
+                // Drawer Header with profile image
                 DrawerHeader(
                   decoration: const BoxDecoration(
                     color: Colors.blueAccent,

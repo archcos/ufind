@@ -35,7 +35,7 @@ class _ProfilePageState extends State<ProfilePage> {
       // If user data is not found, navigate to SignInPage
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => SigninPage()),
+        MaterialPageRoute(builder: (context) => const SigninPage()),
       );
     } else {
       setState(() {
@@ -61,7 +61,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Profile updated successfully!')),
+          const SnackBar(content: Text('Profile updated successfully!')),
         );
 
         // Save updated data to SharedPreferences
@@ -72,12 +72,12 @@ class _ProfilePageState extends State<ProfilePage> {
 
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update profile.')),
+          const SnackBar(content: Text('Failed to update profile.')),
         );
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('User ID is missing.')),
+        const SnackBar(content: Text('User ID is missing.')),
       );
     }
   }
@@ -86,14 +86,14 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     // If userId is null, show loading spinner until data is fetched
     if (userId == null) {
-      return Scaffold(
+      return const Scaffold(
         body: Center(child: CircularProgressIndicator()), // Show loading until userId is fetched
       );
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text("Edit Profile"),
+        title: const Text("Edit Profile"),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -101,37 +101,37 @@ class _ProfilePageState extends State<ProfilePage> {
           child: Column(
             children: [
               // Profile picture section (Just a placeholder here)
-              CircleAvatar(
+              const CircleAvatar(
                 radius: 50,
                 backgroundImage: AssetImage('assets/images/profile.jpg'), // Replace with actual image
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
 
               // Text fields for user details
               TextField(
                 controller: _firstNameController,
-                decoration: InputDecoration(labelText: 'First Name'),
+                decoration: const InputDecoration(labelText: 'First Name'),
               ),
               TextField(
                 controller: _lastNameController,
-                decoration: InputDecoration(labelText: 'Last Name'),
+                decoration: const InputDecoration(labelText: 'Last Name'),
               ),
               TextField(
                 controller: _schoolIdController,
-                decoration: InputDecoration(labelText: 'School ID'),
+                decoration: const InputDecoration(labelText: 'School ID'),
                 readOnly: true, // School ID is used as the document ID, so it's read-only
               ),
               TextField(
                 controller: _passwordController,
                 obscureText: true,
-                decoration: InputDecoration(labelText: 'Password'),
+                decoration: const InputDecoration(labelText: 'Password'),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
 
               // Save Button
               ElevatedButton(
                 onPressed: saveProfile,
-                child: Text('Save Changes'),
+                child: const Text('Save Changes'),
               ),
             ],
           ),

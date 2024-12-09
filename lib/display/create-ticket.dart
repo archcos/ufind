@@ -1,9 +1,14 @@
+import 'dart:io';  // For file handling
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:intl/intl.dart';  // Import for DateFormat
+import 'package:intl/intl.dart';  // For DateFormat
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:image_picker/image_picker.dart';  // For image selection
+import 'package:supabase_flutter/supabase_flutter.dart';  // For Supabase upload
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'dart:typed_data'; // For Uint8List
 
 class TicketDetailsPage extends StatefulWidget {
   @override
@@ -13,7 +18,7 @@ class TicketDetailsPage extends StatefulWidget {
 class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  // Form fields
+  // Form Fields
   final TextEditingController _itemNameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _dateTimeController = TextEditingController();
@@ -22,8 +27,12 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
   final TextEditingController _emailController = TextEditingController();
   String _lastSeenLocation = "Tap to set location";
   LatLng? _selectedLocation;
+  String _itemType = '';  // 'Lost' or 'Found'
 
-  String _itemType = ''; // 'Lost' or 'Found'
+  // Image Upload Fields
+  File? _selectedImage;  // Selected image file
+  final ImagePicker _picker = ImagePicker();  // Image picker instance
+  String? _imageUrl;  // URL of the uploaded image
 
   @override
   void initState() {
@@ -31,8 +40,8 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
     _tabController = TabController(length: 2, vsync: this);
   }
 
-  // Function to show the item type selection dialog
-  void _showItemTypeDialog() async {
+  // Show Item Type Selection Dialog
+  void _showItemTypeDialog() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -64,33 +73,114 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
     );
   }
 
-  // Function to validate and save data to Firebase
-  void _saveToFirebase() async {
+
+  Future<File?> _compressImage(File image) async {
+    // Read the image as bytes (Uint8List)
+    final Uint8List imageBytes = await image.readAsBytes();
+
+    // Compress the image using flutter_image_compress
+    final List<int>? result = await FlutterImageCompress.compressWithList(
+      imageBytes,
+      minWidth: 400, // Resize width (adjust as needed)
+      quality: 50,    // Set the quality (lower for better compression)
+    );
+
+    if (result == null) {
+      return null;
+    }
+
+    // Convert List<int> result to Uint8List
+    final Uint8List compressedBytes = Uint8List.fromList(result);
+
+    // Create a new file with the compressed bytes
+    final compressedImage = File(image.path)..writeAsBytesSync(compressedBytes);
+
+    // Print the original and compressed image sizes for debugging
+    print('Original image size: ${image.lengthSync()} bytes');
+    print('Compressed image size: ${compressedImage.lengthSync()} bytes');
+
+    return compressedImage;
+  }
+
+  // Upload Image to Supabase
+  // Upload Image to Supabase with compression
+  Future<String?> _uploadImageToSupabase() async {
+    if (_selectedImage == null) return null;
+
+    try {
+      // Compress the image before uploading
+      File? compressedImage = await _compressImage(_selectedImage!);
+
+      if (compressedImage == null) {
+        throw Exception('Error compressing image');
+      }
+
+      // Create a unique file name with a timestamp to avoid overwriting
+      final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+
+      // Upload the compressed image to Supabase storage
+      final response = await Supabase.instance.client.storage
+          .from('images') // 'images' is the name of your bucket
+          .upload(fileName, compressedImage);
+
+      // Check if the upload was successful
+      if (response.error != null) {
+        throw response.error!;
+      }
+
+      // Retrieve the public URL for the uploaded file
+      final publicUrl = 'https://tqvgagdffmjtxswldtgm.supabase.co/storage/v1/object/public/images/$fileName';
+
+      // Return the URL as a string
+      return publicUrl;
+
+    } catch (e) {
+      print('Error uploading image: $e');
+      // Handle any errors during upload
+      return null;
+    }
+  }
+
+
+  // Save Ticket Data to Firebase Firestore
+  Future<void> _saveToFirebase() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? schoolId = prefs.getString('user_school_id'); // Retrieve the school ID
+    String? schoolId = prefs.getString('user_school_id');
 
     if (schoolId == null) {
-      // Handle case where the school ID is not found
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('School ID not found. Please log in again.')),
       );
       return;
     }
+
+    // Check if all fields are filled out correctly
     if (_itemNameController.text.isEmpty ||
         _descriptionController.text.isEmpty ||
         _dateTimeController.text.isEmpty ||
         _contactNameController.text.isEmpty ||
         _contactNumberController.text.isEmpty ||
         _emailController.text.isEmpty ||
-        _itemType.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Please fill out all fields!'),
-        backgroundColor: Colors.red,
-      ));
+        _itemType.isEmpty ||
+        _lastSeenLocation == "Tap to set location" || // Ensuring the location is selected
+        _imageUrl == null || _imageUrl!.isEmpty) { // Check if image URL is not empty
+      // Print the image URL if it's not empty
+      if (_imageUrl != null && _imageUrl!.isNotEmpty) {
+        print("Image URL: $_imageUrl");
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please fill out all fields and upload an image!'),
+          backgroundColor: Colors.red,
+        ),
+      );
       return;
     }
 
-    FirebaseFirestore.instance.collection('tickets').add({
+
+    // Save ticket details to Firestore
+    await FirebaseFirestore.instance.collection('tickets').add({
       'itemType': _itemType,
       'itemName': _itemNameController.text,
       'description': _descriptionController.text,
@@ -99,8 +189,9 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
       'contactNumber': _contactNumberController.text,
       'email': _emailController.text,
       'lastSeenLocation': _lastSeenLocation,
-      'schoolId': schoolId,  // Add school ID to the ticket
+      'schoolId': schoolId,
       'status': 'Pending',
+      'imageUrl': _imageUrl,  // Save uploaded image URL
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -108,7 +199,6 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
     );
   }
 
-  // Function to open DatePicker
   Future<void> _pickDateTime() async {
     DateTime initialDate = DateTime.now();
     DateTime pickedDate = (await showDatePicker(
@@ -133,6 +223,18 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
     });
   }
 
+
+  // Pick an Image
+  Future<void> _pickImage() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _selectedImage = File(pickedFile.path);
+      });
+    }
+  }
+
+  // Pick Location
   Future<void> _pickLocation() async {
     final result = await Navigator.push(
       context,
@@ -151,6 +253,7 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
     }
   }
 
+  // UI Elements
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -166,7 +269,6 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
       ),
       body: Column(
         children: [
-          // Initial popup dialog for item type
           if (_itemType.isEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 16.0),
@@ -187,7 +289,23 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _saveToFirebase,
+        onPressed: () async {
+          // Upload image to Supabase first and get the image URL
+          final imageUrl = await _uploadImageToSupabase();
+          print(imageUrl);
+
+          if (imageUrl != null) {
+            setState(() {
+              _imageUrl = imageUrl;  // Set the image URL after successful upload
+            });
+            // Proceed to save the ticket details to Firebase
+            _saveToFirebase();
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Image upload failed. Please try again.')),
+            );
+          }
+        },
         child: Icon(Icons.save),
       ),
     );
@@ -206,11 +324,19 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
               child: _buildTextField("Date & Time", _dateTimeController),
             ),
           ),
-          ListTile(
-            title: Text("Last Seen Location"),
-            subtitle: Text(_lastSeenLocation),
-            trailing: Icon(Icons.map),
+          GestureDetector(
             onTap: _pickLocation,
+            child: AbsorbPointer(
+              child: ListTile(
+                title: Text("Last Seen Location"),
+                subtitle: Text(_lastSeenLocation),
+                trailing: Icon(Icons.map),
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: _pickImage,
+            child: Text(_selectedImage == null ? 'Pick Image' : 'Change Image'),
           ),
         ],
       ),
@@ -242,6 +368,10 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
       ),
     );
   }
+}
+
+extension on String {
+  get error => null;
 }
 
 class MapPickerScreen extends StatefulWidget {

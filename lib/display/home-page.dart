@@ -112,14 +112,14 @@ class HomePage extends StatelessWidget {
                   leading: const Icon(Icons.add_box),
                   title: const Text('Create Listing'),
                   onTap: () {
-                    Navigator.pushNamed(context, '/homepage');
+                    Navigator.pushNamed(context, '/create-ticket');
                   },
                 ),
                 ListTile(
                   leading: const Icon(Icons.search),
                   title: const Text('Browse Item'),
                   onTap: () {
-                    Navigator.pushNamed(context, '/homepage');
+                    Navigator.pushNamed(context, '/browse-items');
                   },
                 ),
                 ListTile(

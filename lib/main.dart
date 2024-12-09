@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:untitled/display/about-us.dart';
+import 'package:untitled/display/browse-items.dart';
+import 'package:untitled/display/create-ticket.dart';
 import 'display/contact-us.dart';
 import 'display/home-page.dart';
 import 'display/landing-page.dart';
@@ -38,6 +40,8 @@ class MyApp extends StatelessWidget {
         '/profile': (context) => ProfilePage(),
         '/about-us': (context) => AboutUsPage(),
         '/contact-us': (context) =>  ContactUsPage(), // Add this line
+        '/create-ticket': (context) =>  TicketDetailsPage(), // Add this line
+        '/browse-items': (context) =>  ItemsListPage(), // Add this line
 
       },
     );

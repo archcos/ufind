@@ -40,18 +40,30 @@ class HomePage extends StatelessWidget {
         ),
         actions: [
           // Profile picture icon in the trailing section
-          GestureDetector(
-            onTap: () {
-              // Navigate to the profile page when clicked
-              Navigator.pushNamed(context, '/profile');
-            },
-            child: const Padding(
-              padding: EdgeInsets.all(8.0),
-              child: CircleAvatar(
-                radius: 20,
-                backgroundImage: AssetImage('assets/images/profile.jpg'),  // Replace with your profile image
-              ),
+          PopupMenuButton<String>(
+            icon: const CircleAvatar(
+              radius: 20,
+              backgroundImage: AssetImage('assets/images/profile.jpg'),  // Replace with your profile image
             ),
+            onSelected: (String value) {
+              if (value == 'profile') {
+                // Navigate to profile page when profile is selected
+                Navigator.pushNamed(context, '/profile');
+              } else if (value == 'logout') {
+                // Perform logout when logout is selected
+                _logout(context);
+              }
+            },
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+              const PopupMenuItem<String>(
+                value: 'profile',
+                child: Text('Open Profile'),
+              ),
+              const PopupMenuItem<String>(
+                value: 'logout',
+                child: Text('Logout'),
+              ),
+            ],
           ),
         ],
       ),

@@ -99,7 +99,7 @@ class _ContactUsPageState extends State<ContactUsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Contact Us'),
+        title: const Text('Contact Us Now'),
         backgroundColor: Colors.blueAccent,
       ),
       body: Padding(
@@ -108,16 +108,6 @@ class _ContactUsPageState extends State<ContactUsPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              // Header Section
-              const Text(
-                'We\'d Love to Hear From You!',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blueAccent,
-                ),
-              ),
-              const SizedBox(height: 20),
               const Text(
                 'Feel free to reach out with any inquiries or feedback.',
                 style: TextStyle(
@@ -125,7 +115,7 @@ class _ContactUsPageState extends State<ContactUsPage> {
                   color: Colors.grey,
                 ),
               ),
-              const SizedBox(height: 30),
+              const SizedBox(height: 10),
 
               // Contact Information Section
               const Text(
@@ -139,17 +129,17 @@ class _ContactUsPageState extends State<ContactUsPage> {
               const SizedBox(height: 20),
               const Text(
                 'Email: rain.shigatsu@gmail.com', // Replace with your contact email
-                style: TextStyle(fontSize: 18),
+                style: TextStyle(fontSize: 15),
               ),
               const SizedBox(height: 10),
               const Text(
                 'Phone: +1 234 567 8901', // Replace with your contact number
-                style: TextStyle(fontSize: 18),
+                style: TextStyle(fontSize: 15),
               ),
               const SizedBox(height: 10),
               const Text(
                 'Office Hours: Mon - Fri, 9:00 AM - 5:00 PM',
-                style: TextStyle(fontSize: 18),
+                style: TextStyle(fontSize: 15),
               ),
               const SizedBox(height: 30),
 
@@ -191,15 +181,19 @@ class _ContactUsPageState extends State<ContactUsPage> {
               const SizedBox(height: 20),
 
               // Button to send the email
-              ElevatedButton(
-                onPressed: _sendEmail, // Calls the send email function
-                child: const Text('Send Message'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blueAccent,
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                  textStyle: const TextStyle(fontSize: 18),
+              Center(
+                child: ElevatedButton(
+                  onPressed: _sendEmail,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueAccent,
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  ), // Calls the send email function
+                  child: const Text(
+                    'Send Message',
+                    style: TextStyle(color: Colors.white), // Set the text color to white
+                  ),
                 ),
-              ),
+              )
             ],
           ),
         ),

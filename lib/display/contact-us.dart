@@ -1,21 +1,97 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart'; // For sending emails directly from the app
+import 'package:mailer/mailer.dart';
+import 'package:mailer/smtp_server.dart';
 
-class ContactUsPage extends StatelessWidget {
+class ContactUsPage extends StatefulWidget {
   const ContactUsPage({super.key});
 
-  // Function to launch the email app with pre-filled details
-  Future<void> _launchEmail(String email) async {
-    final Uri emailUri = Uri(
-      scheme: 'mailto',
-      path: email,
-      queryParameters: {'subject': 'Contact Us Inquiry'}, // You can add more query parameters if needed
-    );
+  @override
+  _ContactUsPageState createState() => _ContactUsPageState();
+}
 
-    if (await canLaunch(emailUri.toString())) {
-      await launch(emailUri.toString());
-    } else {
-      throw 'Could not launch $email';
+class _ContactUsPageState extends State<ContactUsPage> {
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _messageController = TextEditingController();
+
+  // Function to send the email
+  Future<void> _sendEmail() async {
+    final String name = _nameController.text.trim();
+    final String email = _emailController.text.trim();
+    final String message = _messageController.text.trim();
+
+    if (name.isEmpty || email.isEmpty || message.isEmpty) {
+      // Show error if any of the fields are empty
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Error'),
+          content: const Text('Please fill out all fields before sending the message.'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    // SMTP configuration (using Gmail SMTP server for demonstration purposes)
+    final smtpServer = gmail('joedavid1345@gmail.com', 'ogdo xldv yyla gley');  // Replace with your email credentials
+
+    // Create a message
+    final messageToSend = Message()
+      ..from = Address('joedavid1345@gmail.com', 'Support Email') // Replace with your email and name
+      ..recipients.add('joedavid1345@gmail.com')  // Replace with the recipient's email
+      ..subject = 'Contact Us Inquiry'
+      ..text = 'Name: $name\nEmail: $email\nMessage: $message';
+
+    try {
+      final sendReport = await send(messageToSend, smtpServer);
+      print('Email sent: ${sendReport.toString()}');
+
+      // Show a success message
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Success'),
+          content: const Text('Your message has been sent successfully!'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _nameController.clear();
+                _emailController.clear();
+                _messageController.clear();
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      print('Error sending email: $e');
+
+      // Show an error dialog if email could not be sent
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Error'),
+          content: const Text('Something went wrong, please try again later.'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
     }
   }
 
@@ -32,12 +108,32 @@ class ContactUsPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
+              // Header Section
+              const Text(
+                'We\'d Love to Hear From You!',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blueAccent,
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Feel free to reach out with any inquiries or feedback.',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey,
+                ),
+              ),
+              const SizedBox(height: 30),
+
               // Contact Information Section
               const Text(
-                'Get in Touch',
+                'Contact Information',
                 style: TextStyle(
-                  fontSize: 24,
+                  fontSize: 22,
                   fontWeight: FontWeight.bold,
+                  color: Colors.blueAccent,
                 ),
               ),
               const SizedBox(height: 20),
@@ -63,10 +159,12 @@ class ContactUsPage extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
+                  color: Colors.blueAccent,
                 ),
               ),
               const SizedBox(height: 20),
               TextField(
+                controller: _nameController,
                 decoration: const InputDecoration(
                   labelText: 'Your Name',
                   border: OutlineInputBorder(),
@@ -74,6 +172,7 @@ class ContactUsPage extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               TextField(
+                controller: _emailController,
                 decoration: const InputDecoration(
                   labelText: 'Your Email',
                   border: OutlineInputBorder(),
@@ -82,6 +181,7 @@ class ContactUsPage extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               TextField(
+                controller: _messageController,
                 decoration: const InputDecoration(
                   labelText: 'Your Message',
                   border: OutlineInputBorder(),
@@ -92,9 +192,7 @@ class ContactUsPage extends StatelessWidget {
 
               // Button to send the email
               ElevatedButton(
-                onPressed: () {
-                  _launchEmail('contact@ufind.com'); // This will open the email client with a pre-filled subject
-                },
+                onPressed: _sendEmail, // Calls the send email function
                 child: const Text('Send Message'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blueAccent,

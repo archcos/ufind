@@ -7,6 +7,7 @@ import 'package:untitled/display/create_ticket.dart';
 import 'display/contact_us.dart';
 import 'display/home_page.dart';
 import 'display/landing-page.dart';
+import 'display/my_ticket.dart';
 import 'display/profile_page.dart';
 import 'display/registration.dart';
 import 'display/signin_page.dart';
@@ -47,6 +48,7 @@ class MyApp extends StatelessWidget {
         '/contact-us': (context) =>  ContactUsPage(), // Add this line
         '/create-ticket': (context) =>  TicketDetailsPage(), // Add this line
         '/browse-items': (context) =>  ItemsListPage(), // Add this line
+        '/my-tickets': (context) =>  MyTicketPage(), // Add this line
 
       },
     );

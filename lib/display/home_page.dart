@@ -131,7 +131,7 @@ class HomePage extends StatelessWidget {
                   leading: const Icon(Icons.view_list),
                   title: const Text('View My Ticket'),
                   onTap: () {
-                    Navigator.pushNamed(context, '/homepage');
+                    Navigator.pushNamed(context, '/my-tickets');
                   },
                 ),
                 ListTile(

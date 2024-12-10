@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';  // For image selection
 import 'package:supabase_flutter/supabase_flutter.dart';  // For Supabase upload
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'dart:typed_data'; // For Uint8List
+import 'dart:math';
 
 class TicketDetailsPage extends StatefulWidget {
   @override
@@ -162,13 +163,8 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
         _contactNumberController.text.isEmpty ||
         _emailController.text.isEmpty ||
         _itemType.isEmpty ||
-        _lastSeenLocation == "Tap to set location" || // Ensuring the location is selected
-        _imageUrl == null || _imageUrl!.isEmpty) { // Check if image URL is not empty
-      // Print the image URL if it's not empty
-      if (_imageUrl != null && _imageUrl!.isNotEmpty) {
-        print("Image URL: $_imageUrl");
-      }
-
+        _lastSeenLocation == "Tap to set location" ||
+        _imageUrl == null || _imageUrl!.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Please fill out all fields and upload an image!'),
@@ -178,9 +174,12 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
       return;
     }
 
+    // Generate a unique document ID
+    String uniqueId = _generateRandomId();
+    String documentId = '${schoolId}_$uniqueId';
 
     // Save ticket details to Firestore
-    await FirebaseFirestore.instance.collection('tickets').add({
+    await FirebaseFirestore.instance.collection('tickets').doc(documentId).set({
       'itemType': _itemType,
       'itemName': _itemNameController.text,
       'description': _descriptionController.text,
@@ -191,13 +190,21 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
       'lastSeenLocation': _lastSeenLocation,
       'schoolId': schoolId,
       'status': 'Pending',
-      'imageUrl': _imageUrl,  // Save uploaded image URL
+      'imageUrl': _imageUrl,
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Ticket Saved Successfully!')),
     );
   }
+
+// Generate 8-character random alphanumeric ID
+  String _generateRandomId() {
+    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    Random random = Random();
+    return List.generate(8, (index) => chars[random.nextInt(chars.length)]).join();
+  }
+
 
   Future<void> _pickDateTime() async {
     DateTime initialDate = DateTime.now();

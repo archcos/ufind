@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cached_network_image/cached_network_image.dart';  // For caching images
+import 'dart:ui';
+
+import 'item_details.dart';
 
 class Ticket {
   final String itemName;
@@ -58,68 +61,94 @@ class ItemsListPage extends StatelessWidget {
           // Create a grid view of tickets with a card design (2 columns)
           return GridView.builder(
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,  // Set the number of columns to 2
-              crossAxisSpacing: 8,  // Space between columns
-              mainAxisSpacing: 8,   // Space between rows
-              childAspectRatio: 0.7,  // Adjust aspect ratio for grid items
+              crossAxisCount: 2, // Number of columns
+              crossAxisSpacing: 8, // Space between columns
+              mainAxisSpacing: 8, // Space between rows
+              childAspectRatio: 0.7, // Aspect ratio for grid items
             ),
             itemCount: tickets.length,
             itemBuilder: (context, index) {
               final ticket = tickets[index];
-              return Card(
-                margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                elevation: 4,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Image display without blur effect
-                    if (ticket.imageUrl.isNotEmpty)
-                      Container(
-                        height: 120,  // Adjust the height of the image container
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: CachedNetworkImage(
-                          imageUrl: ticket.imageUrl,
-                          fit: BoxFit.cover,
-                          height: double.infinity,
-                          width: double.infinity,
-                          placeholder: (context, url) =>
-                              Center(child: CircularProgressIndicator()),
-                          errorWidget: (context, url, error) =>
-                              Icon(Icons.error, color: Colors.red),
-                        ),
-                      ),
-                    SizedBox(height: 8),
-                    // Title and date (instead of description)
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              ticket.itemName,
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              maxLines: 1,  // Limit title to one line
-                              overflow: TextOverflow.ellipsis, // Add ellipsis if text overflows
-                            ),
-                            SizedBox(height: 4),
-                            Text(
-                              ticket.dateTime,  // Use the date field instead of description
-                              style: TextStyle(fontSize: 12, color: Colors.grey[700]),
-                              maxLines: 1,  // Limit the date text to one line
-                              overflow: TextOverflow.ellipsis, // Add ellipsis if text overflows
-                            ),
-                          ],
-                        ),
-                      ),
+              return GestureDetector(
+                onTap: () {
+                  // Navigate to ItemDetailsPage when tapped
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ItemDetailsPage(ticket: ticket),
                     ),
-                  ],
+                  );
+                },
+                child: Card(
+                  margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                  elevation: 4,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Image display
+                      if (ticket.imageUrl.isNotEmpty)
+                        Container(
+                          height: 120, // Adjust the height of the image container
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8), // Rounded corners
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8), // Ensure clipping matches the border radius
+                            child: Stack(
+                              children: [
+                                CachedNetworkImage(
+                                  imageUrl: ticket.imageUrl,
+                                  fit: BoxFit.cover,
+                                  height: double.infinity,
+                                  width: double.infinity,
+                                  placeholder: (context, url) =>
+                                      Center(child: CircularProgressIndicator()),
+                                  errorWidget: (context, url, error) =>
+                                      Icon(Icons.error, color: Colors.red),
+                                ),
+                                Positioned.fill(
+                                  child: BackdropFilter(
+                                    filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0), // Apply blur
+                                    child: Container(
+                                      color: Colors.black.withOpacity(0.1), // Optional overlay for darkening
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      SizedBox(height: 8),
+                      // Title and date
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                ticket.itemName,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                ticket.dateTime,
+                                style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               );
             },

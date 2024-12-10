@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'browse-items.dart';
+import 'browse_items.dart';
 
 class ItemDetailsPage extends StatelessWidget {
   final Ticket ticket;

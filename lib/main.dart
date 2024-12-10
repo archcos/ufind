@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:untitled/display/about-us.dart';
-import 'package:untitled/display/browse-items.dart';
-import 'package:untitled/display/create-ticket.dart';
-import 'display/contact-us.dart';
-import 'display/home-page.dart';
+import 'package:untitled/display/about_us.dart';
+import 'package:untitled/display/browse_items.dart';
+import 'package:untitled/display/create_ticket.dart';
+import 'display/contact_us.dart';
+import 'display/home_page.dart';
 import 'display/landing-page.dart';
-import 'display/profile-page.dart';
+import 'display/profile_page.dart';
 import 'display/registration.dart';
-import 'display/signin-page.dart';
+import 'display/signin_page.dart';
 import 'firebase_options.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 

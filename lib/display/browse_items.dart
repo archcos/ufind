@@ -1,77 +1,104 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cached_network_image/cached_network_image.dart';  // For caching images
+import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:ui';
-
+import '../models/ticket_model.dart';
 import 'item_details.dart';
+import 'package:intl/intl.dart';
 
-class Ticket {
-  final String itemName;
-  final String description;
-  final String dateTime;  // Use this instead of description
-  final String contactName;
-  final String contactNumber;
-  final String email;
-  final String lastSeenLocation;
-  final String imageUrl;
-
-  Ticket({
-    required this.itemName,
-    required this.description,
-    required this.dateTime,  // Use dateTime
-    required this.contactName,
-    required this.contactNumber,
-    required this.email,
-    required this.lastSeenLocation,
-    required this.imageUrl,
-  });
-
-  factory Ticket.fromDocument(DocumentSnapshot doc) {
-    return Ticket(
-      itemName: doc['itemName'] ?? '',
-      description: doc['description'] ?? '',
-      dateTime: doc['dateTime'] ?? '',  // Use dateTime field
-      contactName: doc['contactName'] ?? '',
-      contactNumber: doc['contactNumber'] ?? '',
-      email: doc['email'] ?? '',
-      lastSeenLocation: doc['lastSeenLocation'] ?? '',
-      imageUrl: doc['imageUrl'] ?? '',
-    );
-  }
+class ItemsListPage extends StatefulWidget {
+  @override
+  _ItemsListPageState createState() => _ItemsListPageState();
 }
 
-class ItemsListPage extends StatelessWidget {
+class _ItemsListPageState extends State<ItemsListPage> {
+  String searchQuery = "";
+  bool isSearching = false;
+  String selectedFilter = "Time";  // Default sorting
+  String typeFilter = "All";       // Default filter
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Ticket List"),
+        title: isSearching
+            ? TextField(
+          decoration: const InputDecoration(
+            hintText: "Search items...",
+            border: InputBorder.none,
+            hintStyle: TextStyle(color: Colors.black12),
+          ),
+          style: const TextStyle(color: Colors.black54),
+          autofocus: true,
+          onChanged: (value) {
+            setState(() {
+              searchQuery = value.toLowerCase();
+            });
+          },
+        )
+            : const Text("Items Feed"),
+        actions: [
+          IconButton(
+            icon: Icon(isSearching ? Icons.close : Icons.search),
+            onPressed: () {
+              setState(() {
+                if (isSearching) searchQuery = "";
+                isSearching = !isSearching;
+              });
+            },
+          ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.filter_list),
+            onSelected: (value) {
+              setState(() {
+                if (value == "Lost" || value == "Found" || value == "All") {
+                  typeFilter = value;
+                } else {
+                  selectedFilter = value;
+                }
+              });
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(value: "Time", child: Text("Sort by Time")),
+              const PopupMenuItem(value: "Alphabetical", child: Text("Sort Alphabetically")),
+              const PopupMenuDivider(),
+              const PopupMenuItem(value: "Lost", child: Text("Show Only Lost")),
+              const PopupMenuItem(value: "Found", child: Text("Show Only Found")),
+              const PopupMenuItem(value: "All", child: Text("Show All")),
+            ],
+          ),
+        ],
       ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('tickets').snapshots(),
+        stream: FirebaseFirestore.instance
+            .collection('tickets')
+            .orderBy(selectedFilter == "Time" ? "dateTime" : "itemName", descending: selectedFilter == "Time")  // Dynamic sorting based on selected filter
+            .snapshots(),
         builder: (context, snapshot) {
-          // Handle loading state
           if (!snapshot.hasData) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           }
 
-          // Extract data from snapshot
-          final tickets = snapshot.data!.docs.map((doc) => Ticket.fromDocument(doc)).toList();
+          final tickets = snapshot.data!.docs
+              .map((doc) => Ticket.fromDocument(doc))
+              .where((ticket) =>
+          (ticket.itemName.toLowerCase().contains(searchQuery) ||
+              ticket.description.toLowerCase().contains(searchQuery)) &&
+              (typeFilter == "All" || ticket.itemType == typeFilter))
+              .toList();
 
-          // Create a grid view of tickets with a card design (2 columns)
           return GridView.builder(
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2, // Number of columns
-              crossAxisSpacing: 8, // Space between columns
-              mainAxisSpacing: 8, // Space between rows
-              childAspectRatio: 0.7, // Aspect ratio for grid items
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              crossAxisSpacing: 1,
+              mainAxisSpacing: 2,
+              childAspectRatio: 0.44,
             ),
             itemCount: tickets.length,
             itemBuilder: (context, index) {
               final ticket = tickets[index];
               return GestureDetector(
                 onTap: () {
-                  // Navigate to ItemDetailsPage when tapped
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -80,12 +107,11 @@ class ItemsListPage extends StatelessWidget {
                   );
                 },
                 child: Card(
-                  margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                  margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 3),
                   elevation: 4,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Image display
                       if (ticket.imageUrl.isNotEmpty)
                         Container(
                           height: 120, // Adjust the height of the image container
@@ -103,11 +129,12 @@ class ItemsListPage extends StatelessWidget {
                                   height: double.infinity,
                                   width: double.infinity,
                                   placeholder: (context, url) =>
-                                      Center(child: CircularProgressIndicator()),
+                                  const Center(child: CircularProgressIndicator()),
                                   errorWidget: (context, url, error) =>
-                                      Icon(Icons.error, color: Colors.red),
+                                  const Icon(Icons.error, color: Colors.red),
                                 ),
-                                Positioned.fill(
+                                if (ticket.itemType != 'Lost')
+                                  Positioned.fill(
                                   child: BackdropFilter(
                                     filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0), // Apply blur
                                     child: Container(
@@ -119,8 +146,7 @@ class ItemsListPage extends StatelessWidget {
                             ),
                           ),
                         ),
-                      SizedBox(height: 8),
-                      // Title and date
+                      const SizedBox(height: 8),
                       Expanded(
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
@@ -129,17 +155,41 @@ class ItemsListPage extends StatelessWidget {
                             children: [
                               Text(
                                 ticket.itemName,
-                                style: TextStyle(
-                                  fontSize: 14,
+                                style: const TextStyle(
+                                  fontSize: 13,
                                   fontWeight: FontWeight.bold,
                                 ),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              SizedBox(height: 4),
                               Text(
-                                ticket.dateTime,
-                                style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                                ticket.itemType,
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: ticket.itemType == 'Found' ? Colors.green : Colors.red, // Conditional color based on itemType
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                ticket.description,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[700],
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 2),
+                              Spacer(), // This will push the following widget to the bottom
+                              Text(
+                                DateFormat('MM-dd-yy h:mm a').format(DateTime.parse(ticket.dateTime)),
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.grey[700],
+                                ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -147,6 +197,7 @@ class ItemsListPage extends StatelessWidget {
                           ),
                         ),
                       ),
+
                     ],
                   ),
                 ),

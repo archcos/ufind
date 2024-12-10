@@ -9,6 +9,7 @@ class Ticket {
   final String email;
   final String lastSeenLocation;
   final String imageUrl;
+  final String itemType;
 
   Ticket({
     required this.itemName,
@@ -19,6 +20,7 @@ class Ticket {
     required this.email,
     required this.lastSeenLocation,
     required this.imageUrl,
+    required this.itemType
   });
 
   factory Ticket.fromDocument(DocumentSnapshot doc) {
@@ -31,6 +33,7 @@ class Ticket {
       email: doc['email'] ?? '',
       lastSeenLocation: doc['lastSeenLocation'] ?? '',
       imageUrl: doc['imageUrl'] ?? '',
+      itemType: doc['itemType'] ?? '',
     );
   }
 }

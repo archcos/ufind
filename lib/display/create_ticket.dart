@@ -10,6 +10,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';  // For Supabase upload
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'dart:typed_data'; // For Uint8List
 import 'dart:math';
+import 'package:flutter/services.dart';
 
 class TicketDetailsPage extends StatefulWidget {
   @override
@@ -46,12 +47,12 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Select Item Type'),
+        title: const Text('Select Item Type'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              title: Text('Lost'),
+              title: const Text('Lost'),
               onTap: () {
                 setState(() {
                   _itemType = 'Lost';
@@ -60,7 +61,7 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
               },
             ),
             ListTile(
-              title: Text('Found'),
+              title: const Text('Found'),
               onTap: () {
                 setState(() {
                   _itemType = 'Found';
@@ -142,15 +143,25 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
     }
   }
 
+  bool _validateContactNumber(String contactNumber) {
+    // Ensure the contact number is not empty and consists of only digits
+    return contactNumber.isNotEmpty && RegExp(r'^[0-9]+$').hasMatch(contactNumber);
+  }
 
-  // Save Ticket Data to Firebase Firestore
+
+  // Email Validation
+  bool _validateEmail(String email) {
+    return RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(email); // Basic email validation
+  }
+
+
   Future<void> _saveToFirebase() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? schoolId = prefs.getString('user_school_id');
 
     if (schoolId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('School ID not found. Please log in again.')),
+        const SnackBar(content: Text('School ID not found. Please log in again.')),
       );
       return;
     }
@@ -166,10 +177,25 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
         _lastSeenLocation == "Tap to set location" ||
         _imageUrl == null || _imageUrl!.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text('Please fill out all fields and upload an image!'),
           backgroundColor: Colors.red,
         ),
+      );
+      return;
+    }
+
+    // Validate contact number and email
+    if (!_validateContactNumber(_contactNumberController.text)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid contact number!')),
+      );
+      return;
+    }
+
+    if (!_validateEmail(_emailController.text)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid email address!')),
       );
       return;
     }
@@ -194,7 +220,7 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Ticket Saved Successfully!')),
+      const SnackBar(content: Text('Ticket Saved Successfully!')),
     );
   }
 
@@ -246,7 +272,7 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => MapPickerScreen(
+        builder: (context) => const MapPickerScreen(
           initialPosition: LatLng(8.485738, 124.657011),
         ),
       ),
@@ -265,12 +291,12 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Ticket Details"),
+        title: const Text("Ticket Details"),
         bottom: TabBar(
           controller: _tabController,
           tabs: [
-            Tab(text: "Ticket Info"),
-            Tab(text: "Contact Info"),
+            const Tab(text: "Ticket Info"),
+            const Tab(text: "Contact Info"),
           ],
         ),
       ),
@@ -281,7 +307,7 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
               padding: const EdgeInsets.only(top: 16.0),
               child: ElevatedButton(
                 onPressed: _showItemTypeDialog,
-                child: Text('Select Lost or Found'),
+                child: const Text('Select Lost or Found'),
               ),
             ),
           Expanded(
@@ -309,20 +335,67 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
             _saveToFirebase();
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Image upload failed. Please try again.')),
+              const SnackBar(content: Text('Image upload failed. Please try again.')),
             );
           }
         },
-        child: Icon(Icons.save),
+        child: const Icon(Icons.save),
       ),
     );
   }
 
   Widget _buildTicketInfoTab() {
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(10.0),
       child: ListView(
         children: [
+          Card(
+              margin: const EdgeInsets.symmetric(horizontal: 5, vertical: 10),
+              elevation: 5,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              color: Colors.blue[50], // Light blue background for the card
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Icon for the reminder
+                    Icon(
+                      Icons.warning_amber_outlined,
+                      color: Colors.orange[700],
+                      size: 30,
+                    ),
+                    const SizedBox(width: 10), // Add space between icon and text
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Reminder:",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Colors.orange[700],
+                            ),
+                          ),
+                          const SizedBox(height: 8), // Add space between "Reminder" and the text
+                          const Text(
+                            "Please don't input the exact location, just close to it and don't describe the item too much to avoid false-claim. Check the School ID of the claimer to verify identity.",
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.black87,
+                            ),
+                            textAlign: TextAlign.start,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           _buildTextField("Item Name", _itemNameController),
           _buildTextField("Description", _descriptionController),
           GestureDetector(
@@ -335,9 +408,9 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
             onTap: _pickLocation,
             child: AbsorbPointer(
               child: ListTile(
-                title: Text("Last Seen Location"),
+                title: const Text("Last Seen Location"),
                 subtitle: Text(_lastSeenLocation),
-                trailing: Icon(Icons.map),
+                trailing: const Icon(Icons.map),
               ),
             ),
           ),
@@ -356,7 +429,17 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
       child: ListView(
         children: [
           _buildTextField("Full Name", _contactNameController),
-          _buildTextField("Contact Number", _contactNumberController),
+          TextField(
+            controller: _contactNumberController,
+            keyboardType: TextInputType.phone,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly, // Restricts input to digits only
+            ],
+            decoration: InputDecoration(
+              labelText: "Contact Number",
+              border: OutlineInputBorder(),
+            ),
+          ),
           _buildTextField("Email", _emailController),
         ],
       ),
@@ -370,7 +453,7 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
         controller: controller,
         decoration: InputDecoration(
           labelText: label,
-          border: OutlineInputBorder(),
+          border: const OutlineInputBorder(),
         ),
       ),
     );
@@ -401,7 +484,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Pick Location")),
+      appBar: AppBar(title: const Text("Pick Location")),
       body: FlutterMap(
         options: MapOptions(
           initialCenter: widget.initialPosition, // Update 'center' to 'initialCenter'
@@ -423,7 +506,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                 point: selectedLocation,
                 width: 40,
                 height: 40,
-                child: Icon(
+                child: const Icon(
                   Icons.location_pin,
                   size: 40,
                   color: Colors.red,
@@ -435,7 +518,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => Navigator.pop(context, selectedLocation),
-        child: Icon(Icons.check),
+        child: const Icon(Icons.check),
       ),
     );
   }

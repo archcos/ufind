@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';  // Import AuthService
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:ui';
 
 class HomePage extends StatelessWidget {
   // Create a GlobalKey for the Scaffold
@@ -115,14 +118,14 @@ class HomePage extends StatelessWidget {
                 ),
                 ListTile(
                   leading: const Icon(Icons.add_box),
-                  title: const Text('Create Listing'),
+                  title: const Text('Create Ticket'),
                   onTap: () {
                     Navigator.pushNamed(context, '/create-ticket');
                   },
                 ),
                 ListTile(
                   leading: const Icon(Icons.search),
-                  title: const Text('Browse Item'),
+                  title: const Text('Browse Items'),
                   onTap: () {
                     Navigator.pushNamed(context, '/browse-items');
                   },
@@ -166,7 +169,7 @@ class HomePage extends StatelessWidget {
           children: [
             // Animated Image at the top
             AnimatedContainer(
-              duration: const Duration(seconds: 2),
+              duration: const Duration(seconds: 5),
               height: 200,
               decoration: const BoxDecoration(
                 image: DecorationImage(
@@ -194,43 +197,157 @@ class HomePage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 30),
-            // Action buttons for user to browse items, view tickets, or create a ticket
+            StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('tickets')
+                  .orderBy('dateTime', descending: true)  // Sorting by dateTime in descending order
+                  .limit(6)  // Limiting to 6 items (2 rows of 3 items each)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                final tickets = snapshot.data!.docs.map((doc) {
+                  return {
+                    'itemName': doc['itemName'] ?? '',
+                    'imageUrl': doc['imageUrl'] ?? '',
+                    'itemType': doc['itemType'] ?? 'Found',  // Fetching itemType
+                  };
+                }).toList();
+
+                if (tickets.isEmpty) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Text(
+                        "No recent tickets found.",
+                        style: TextStyle(fontSize: 16, color: Colors.black54),
+                      ),
+                    ),
+                  );
+                }
+
+                return Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,  // 3 items per row
+                      crossAxisSpacing: 8,
+                      mainAxisSpacing: 8,
+                      childAspectRatio: 0.8,
+                    ),
+                    itemCount: tickets.length,
+                    itemBuilder: (context, index) {
+                      final ticket = tickets[index];
+                      final isLostItem = ticket['itemType'] == 'Lost';  // Check if itemType is 'Lost'
+
+                      return Card(
+                        elevation: 4,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Stack (
+                                    children: [CachedNetworkImage(
+                                      imageUrl: ticket['imageUrl'],
+                                      fit: BoxFit.cover,
+                                      width: double.infinity,
+                                      placeholder: (context, url) =>
+                                      const Center(child: CircularProgressIndicator()),
+                                      errorWidget: (context, url, error) =>
+                                      const Icon(Icons.error, color: Colors.red),
+                                    ),
+                                      if (!isLostItem)
+                                        Positioned.fill(
+                                        child: BackdropFilter(
+                                          filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0), // Apply blur
+                                          child: Container(
+                                            color: Colors.black.withOpacity(0.1), // Optional overlay for darkening
+                                          ),
+                                        ),
+                                      ),
+                                    ]
+                                ),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(
+                                ticket['itemName'],
+                                style: const TextStyle(
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
+            ),
+
+
+// Action buttons for user to browse items, view tickets, or create a ticket
             Center(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    ElevatedButton(
+                    // Browse Items Button
+                    ElevatedButton.icon(
                       onPressed: () {
                         Navigator.pushNamed(context, '/browse-items');
                       },
                       style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
-                        backgroundColor: Colors.blueAccent,
+                        padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 18),
+                        backgroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                          side: const BorderSide(
+                            color: Colors.black54, // Border color
+                            width: 1, // Border width
+                          ),
+                        ),
                       ),
-                      child: const Text('Browse Items'),
-                    ),
-                    const SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.pushNamed(context, '/view-my-tickets');
-                      },
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
-                        backgroundColor: Colors.green,
+                      icon: const Icon(Icons.search, color: Colors.black54),
+                      label: const Text(
+                        'See More',
+                        style: TextStyle(fontSize: 12),
                       ),
-                      child: const Text('View My Tickets'),
                     ),
-                    const SizedBox(height: 20),
-                    ElevatedButton(
+
+                    // Create Ticket Button
+                    ElevatedButton.icon(
                       onPressed: () {
                         Navigator.pushNamed(context, '/create-ticket');
                       },
                       style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
-                        backgroundColor: Colors.orange,
+                        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+                        backgroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                          side: const BorderSide(
+                            color: Colors.black54, // Border color
+                            width: 1, // Border width
+                          ),
+                        ),
                       ),
-                      child: const Text('Create a Ticket'),
+                      icon: const Icon(Icons.add_outlined, color: Colors.black54),
+                      label: const Text(
+                        'Create Ticket',
+                        style: TextStyle(fontSize: 12),
+                      ),
                     ),
                   ],
                 ),

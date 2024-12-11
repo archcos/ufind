@@ -22,11 +22,11 @@ class AboutUsPage extends StatelessWidget {
             ),
             const SizedBox(height: 20), // Space between the image and text
             // Scrollable content below the image
-            Padding(
-              padding: const EdgeInsets.all(16.0),
+            const Padding(
+              padding: EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
+                children: [
                   Text(
                     'Our Mission',
                     style: TextStyle(

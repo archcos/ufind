@@ -45,7 +45,7 @@ class _ContactUsPageState extends State<ContactUsPage> {
 
     // Create a message
     final messageToSend = Message()
-      ..from = Address('joedavid1345@gmail.com', 'Support Email') // Replace with your email and name
+      ..from = const Address('joedavid1345@gmail.com', 'Support Email') // Replace with your email and name
       ..recipients.add('joedavid1345@gmail.com')  // Replace with the recipient's email
       ..subject = 'Contact Us Inquiry'
       ..text = 'Name: $name\nEmail: $email\nMessage: $message';

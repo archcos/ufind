@@ -68,7 +68,7 @@ class _SigninPageState extends State<SigninPage> {
         padding: const EdgeInsets.symmetric(horizontal: 20),
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.red, Colors.blue, Colors.yellow],
+            colors: [Colors.lightBlueAccent, Colors.purpleAccent],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),

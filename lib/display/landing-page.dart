@@ -69,16 +69,24 @@ class SlidePage extends StatelessWidget {
           fit: BoxFit.cover,
         ),
         if (isLast)
-          Positioned(
-            bottom: 0,
-            left: 150,
-            child: Center(
-              child: ElevatedButton(
-                onPressed: onFinish,
-                child: const Text('Get Started'),
+          Stack(
+            children: [
+              // Other content here, if any
+
+              Positioned(
+                bottom: 40, // Positioning the button 20 pixels above the bottom edge
+                left: 0, // Set left to 0 to start from the left side
+                right: 0, // Set right to 0 to stretch to the right side, ensuring centering
+                child: Align(
+                  alignment: Alignment.bottomCenter, // Align the button in the center horizontally
+                  child: ElevatedButton(
+                    onPressed: onFinish,
+                    child: const Text('Get Started'),
+                  ),
+                ),
               ),
-            ),
-          ),
+            ],
+          )
       ],
     );
   }

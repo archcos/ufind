@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Ticket {
+  final String id; // Added ID field
   final String itemName;
   final String description;
   final String dateTime;
@@ -12,6 +13,7 @@ class Ticket {
   final String itemType;
 
   Ticket({
+    required this.id, // Include ID in constructor
     required this.itemName,
     required this.description,
     required this.dateTime,
@@ -20,11 +22,12 @@ class Ticket {
     required this.email,
     required this.lastSeenLocation,
     required this.imageUrl,
-    required this.itemType
+    required this.itemType,
   });
 
   factory Ticket.fromDocument(DocumentSnapshot doc) {
     return Ticket(
+      id: doc.id, // Assign document ID
       itemName: doc['itemName'] ?? '',
       description: doc['description'] ?? '',
       dateTime: doc['dateTime'] ?? '',

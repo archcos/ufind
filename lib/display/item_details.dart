@@ -48,7 +48,7 @@ class ItemDetailsPage extends StatelessWidget {
                   width: double.infinity,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(10),
-                    boxShadow: [
+                    boxShadow: const [
                       BoxShadow(
                         color: Colors.black26,
                         blurRadius: 6,
@@ -69,7 +69,8 @@ class ItemDetailsPage extends StatelessWidget {
                           placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
                           errorWidget: (context, url, error) => const Icon(Icons.error),
                         ),
-                        Positioned.fill(
+                        if (ticket.itemType != 'Lost')
+                          Positioned.fill(
                           child: BackdropFilter(
                             filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0), // Apply blur effect
                             child: Container(
@@ -84,22 +85,22 @@ class ItemDetailsPage extends StatelessWidget {
 
               const SizedBox(height: 16),
               // Item name
-              Text('Item Name: ${ticket.itemName}', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+              Text('Item Name: ${ticket.itemName}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               // Description
-              Text('Description: ${ticket.description}', style: TextStyle(fontSize: 16)),
+              Text('Description: ${ticket.description}', style: const TextStyle(fontSize: 16)),
               const SizedBox(height: 8),
               // Date and time
-              Text('Date & Time: ${ticket.dateTime}', style: TextStyle(fontSize: 16, color: Colors.grey)),
+              Text('Date & Time: ${ticket.dateTime}', style: const TextStyle(fontSize: 16, color: Colors.grey)),
               const SizedBox(height: 8),
               // Contact Name
-              Text('Contact Name: ${ticket.contactName}', style: TextStyle(fontSize: 16)),
+              Text('Contact Name: ${ticket.contactName}', style: const TextStyle(fontSize: 16)),
               const SizedBox(height: 8),
               // Contact Number
-              Text('Contact Number: ${ticket.contactNumber}', style: TextStyle(fontSize: 16)),
+              Text('Contact Number: ${ticket.contactNumber}', style: const TextStyle(fontSize: 16)),
               const SizedBox(height: 8),
               // Email
-              Text('Email: ${ticket.email}', style: TextStyle(fontSize: 16)),
+              Text('Email: ${ticket.email}', style: const TextStyle(fontSize: 16)),
               const SizedBox(height: 8),
               // Last Seen Location with clickable functionality
               GestureDetector(
@@ -108,26 +109,26 @@ class ItemDetailsPage extends StatelessWidget {
                 },
                 child: Text(
                   'Last Seen Location: ${ticket.lastSeenLocation}',
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Colors.blue,
                     fontWeight: FontWeight.bold,
                     decoration: TextDecoration.underline,
                   ),
                 ),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               // Map displaying the location
               SizedBox(
                 height: 300,  // Height of the map container
                 child: FlutterMap(
                   options: MapOptions(
                     initialCenter: latLng,  // Center the map on the ticket's location
-                    initialZoom: 20,  // Adjust zoom level
+                    initialZoom: 18,  // Adjust zoom level
                   ),
                   children: [
                     TileLayer(
                       urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",  // OpenStreetMap tiles
-                      subdomains: ['a', 'b', 'c'],
+                      subdomains: const ['a', 'b', 'c'],
                     ),
                     MarkerLayer(
                       markers: [
@@ -135,7 +136,7 @@ class ItemDetailsPage extends StatelessWidget {
                           point: latLng,  // Marker at the last seen location
                           width: 40,
                           height: 40,
-                          child: Icon(
+                          child: const Icon(
                             Icons.location_pin,
                             size: 40,
                             color: Colors.red,

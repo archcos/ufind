@@ -152,8 +152,15 @@ class HomePage extends StatelessWidget {
                   },
                 ),
                 ListTile(
-                  leading: const Icon(Icons.exit_to_app),
-                  title: const Text('Logout'),
+                  leading: const Icon(Icons.exit_to_app, color: Colors.red,),
+                  title: const Text(
+                      'Logout',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.red,
+                    ),
+                  ),
                   onTap: () {
                     _logout(context);
                   },
@@ -189,14 +196,26 @@ class HomePage extends StatelessWidget {
               child: Text(
                 'Welcome to U-Find! Your one-stop solution for finding and managing your lost and found items. Explore our services and get started with ease!',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 15,
                   fontWeight: FontWeight.w400,
                   color: Colors.black87,
                 ),
                 textAlign: TextAlign.center,
               ),
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 20),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              child: Text(
+                "Recent Items",
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.blue,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
             StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('tickets')
@@ -246,6 +265,10 @@ class HomePage extends StatelessWidget {
 
                       return Card(
                         elevation: 4,
+                          child: InkWell(
+                          onTap: () {
+                        Navigator.pushNamed(context, '/browse-items');
+                        },
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -277,11 +300,26 @@ class HomePage extends StatelessWidget {
                             ),
                             Padding(
                               padding: const EdgeInsets.all(8.0),
-                              child: Text(
-                                ticket['itemName'],
-                                style: const TextStyle(
-                                  fontSize: 8,
-                                  fontWeight: FontWeight.bold,
+                              child: RichText(
+                                text: TextSpan(
+                                  children: [
+                                    TextSpan(
+                                      text: '${ticket['itemName']} \n', // Keep itemName black
+                                      style: const TextStyle(
+                                        fontSize: 8,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black, // Item name stays black
+                                      ),
+                                    ),
+                                    TextSpan(
+                                      text: ticket['itemType'], // Display itemType in dynamic color
+                                      style: TextStyle(
+                                        fontSize: 8,
+                                        fontWeight: FontWeight.bold,
+                                        color: ticket['itemType'] == 'Found' ? Colors.green : Colors.red, // Green if Found, Red otherwise
+                                      ),
+                                    ),
+                                  ],
                                 ),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
@@ -289,7 +327,7 @@ class HomePage extends StatelessWidget {
                             ),
                           ],
                         ),
-                      );
+                      ));
                     },
                   ),
                 );

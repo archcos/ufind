@@ -25,7 +25,6 @@ class ItemDetailsPage extends StatelessWidget {
     return LatLng(latitude, longitude);
   }
 
-
   @override
   Widget build(BuildContext context) {
     final latLng = _parseLocation(ticket.lastSeenLocation);
@@ -71,13 +70,13 @@ class ItemDetailsPage extends StatelessWidget {
                         ),
                         if (ticket.itemType != 'Lost')
                           Positioned.fill(
-                          child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0), // Apply blur effect
-                            child: Container(
-                              color: Colors.black.withOpacity(0.1), // Optional dark overlay
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0), // Apply blur effect
+                              child: Container(
+                                color: Colors.black.withOpacity(0.1), // Optional dark overlay
+                              ),
                             ),
                           ),
-                        ),
                       ],
                     ),
                   ),
@@ -102,51 +101,56 @@ class ItemDetailsPage extends StatelessWidget {
               // Email
               Text('Email: ${ticket.email}', style: const TextStyle(fontSize: 16)),
               const SizedBox(height: 8),
-              // Last Seen Location with clickable functionality
-              GestureDetector(
-                onTap: () {
-                  // You can add an onTap action here if needed
-                },
-                child: Text(
-                  'Last Seen Location: ${ticket.lastSeenLocation}',
-                  style: const TextStyle(
-                    color: Colors.blue,
-                    fontWeight: FontWeight.bold,
-                    decoration: TextDecoration.underline,
+
+              // Conditionally display Last Seen Location and Map only if item type is 'Lost'
+              if (ticket.itemType == 'Lost') ...[
+                // Last Seen Location with clickable functionality
+                GestureDetector(
+                  onTap: () {
+                    // You can add an onTap action here if needed
+                  },
+                  child: Text(
+                    'Last Seen Location: ${ticket.lastSeenLocation}',
+                    style: const TextStyle(
+                      color: Colors.blue,
+                      fontWeight: FontWeight.bold,
+                      decoration: TextDecoration.underline,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 20),
-              // Map displaying the location
-              SizedBox(
-                height: 300,  // Height of the map container
-                child: FlutterMap(
-                  options: MapOptions(
-                    initialCenter: latLng,  // Center the map on the ticket's location
-                    initialZoom: 18,  // Adjust zoom level
-                  ),
-                  children: [
-                    TileLayer(
-                      urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",  // OpenStreetMap tiles
-                      subdomains: const ['a', 'b', 'c'],
+                const SizedBox(height: 20),
+
+                // Map displaying the location
+                SizedBox(
+                  height: 300,  // Height of the map container
+                  child: FlutterMap(
+                    options: MapOptions(
+                      initialCenter: latLng,  // Center the map on the ticket's location
+                      initialZoom: 18,  // Adjust zoom level
                     ),
-                    MarkerLayer(
-                      markers: [
-                        Marker(
-                          point: latLng,  // Marker at the last seen location
-                          width: 40,
-                          height: 40,
-                          child: const Icon(
-                            Icons.location_pin,
-                            size: 40,
-                            color: Colors.red,
+                    children: [
+                      TileLayer(
+                        urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",  // OpenStreetMap tiles
+                        subdomains: const ['a', 'b', 'c'],
+                      ),
+                      MarkerLayer(
+                        markers: [
+                          Marker(
+                            point: latLng,  // Marker at the last seen location
+                            width: 40,
+                            height: 40,
+                            child: const Icon(
+                              Icons.location_pin,
+                              size: 40,
+                              color: Colors.red,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ),

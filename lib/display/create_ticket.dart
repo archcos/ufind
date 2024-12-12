@@ -19,6 +19,7 @@ class TicketDetailsPage extends StatefulWidget {
 
 class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>(); // Key to control scaffold messenger
 
   // Form Fields
   final TextEditingController _itemNameController = TextEditingController();
@@ -107,7 +108,11 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
   // Upload Image to Supabase
   // Upload Image to Supabase with compression
   Future<String?> _uploadImageToSupabase() async {
-    if (_selectedImage == null) return null;
+    // If no image is selected, use the default image from assets
+    if (_selectedImage == null) {
+      // Load the default image from assets
+      _selectedImage = await _loadAssetImage('assets/default_image.png');
+    }
 
     try {
       // Compress the image before uploading
@@ -127,7 +132,7 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
 
       // Check if the upload was successful
       if (response.error != null) {
-        throw response.error!;
+        // throw response.error!;
       }
 
       // Retrieve the public URL for the uploaded file
@@ -139,6 +144,24 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
     } catch (e) {
       print('Error uploading image: $e');
       // Handle any errors during upload
+      return null;
+    }
+  }
+
+// Load image from assets and return it as a File object
+  Future<File?> _loadAssetImage(String path) async {
+    try {
+      // Load the image as a byte array from assets
+      final ByteData data = await rootBundle.load(path);
+      final List<int> bytes = data.buffer.asUint8List();
+
+      // Create a temporary file to store the asset image
+      final tempFile = File('${Directory.systemTemp.path}/temp_image.png');
+      await tempFile.writeAsBytes(bytes);
+
+      return tempFile;
+    } catch (e) {
+      print('Error loading asset image: $e');
       return null;
     }
   }
@@ -167,21 +190,21 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
     }
 
     // Check if all fields are filled out correctly
-    if (_itemNameController.text.isEmpty ||
-        _descriptionController.text.isEmpty ||
-        _dateTimeController.text.isEmpty ||
-        _contactNameController.text.isEmpty ||
-        _contactNumberController.text.isEmpty ||
-        _emailController.text.isEmpty ||
-        _itemType.isEmpty ||
-        _lastSeenLocation == "Tap to set location" ||
-        _imageUrl == null || _imageUrl!.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please fill out all fields and upload an image!'),
-          backgroundColor: Colors.red,
-        ),
-      );
+    List<String> emptyFields = [];
+
+    if (_itemNameController.text.isEmpty) emptyFields.add("Item Name");
+    if (_descriptionController.text.isEmpty) emptyFields.add("Description");
+    if (_dateTimeController.text.isEmpty) emptyFields.add("Date & Time");
+    if (_contactNameController.text.isEmpty) emptyFields.add("Full Name");
+    if (_contactNumberController.text.isEmpty) emptyFields.add("Contact Number");
+    if (_emailController.text.isEmpty) emptyFields.add("Email");
+    if (_itemType.isEmpty) emptyFields.add("Select Lost or Found");
+    if (_lastSeenLocation == "Tap to set location") emptyFields.add("Location");
+    if (_imageUrl == null || _imageUrl!.isEmpty) emptyFields.add("Image");
+
+    // If there are empty fields, show a SnackBar with a list of them
+    if (emptyFields.isNotEmpty) {
+      _showTopSnackBar('Please fill out the following fields: ${emptyFields.join(", ")}');
       return;
     }
 
@@ -290,6 +313,7 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldMessengerKey, // Set the scaffoldMessengerKey here
       appBar: AppBar(
         title: const Text("Ticket Details"),
         bottom: TabBar(
@@ -302,6 +326,53 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
       ),
       body: Column(
         children: [
+          Card(
+            margin: const EdgeInsets.symmetric(horizontal: 5, vertical: 10),
+            elevation: 5,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
+            ),
+            color: Colors.blue[50], // Light blue background for the card
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Icon for the reminder
+                  Icon(
+                    Icons.warning_amber_outlined,
+                    color: Colors.orange[700],
+                    size: 30,
+                  ),
+                  const SizedBox(width: 10), // Add space between icon and text
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Reminder:",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Colors.orange[700],
+                          ),
+                        ),
+                        const SizedBox(height: 8), // Add space between "Reminder" and the text
+                        const Text(
+                          "Avoid providing excessive description about the item to prevent false claims. Also, verify the claimer's identity by checking their School ID.",
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.black87,
+                          ),
+                          textAlign: TextAlign.justify,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
           if (_itemType.isEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 16.0),
@@ -344,58 +415,47 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
     );
   }
 
+  void _showTopSnackBar(String message) {
+    final overlay = Overlay.of(context);
+    final overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        top: 50, // Adjust position from the top
+        left: 10,
+        right: 10,
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            decoration: BoxDecoration(
+              color: Colors.red,
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.error, color: Colors.white),
+                SizedBox(width: 8.0),
+                Expanded(child: Text(message, style: TextStyle(color: Colors.white))),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    overlay.insert(overlayEntry);
+
+    // Remove the snackBar after 3 seconds
+    Future.delayed(const Duration(seconds: 5), () {
+      overlayEntry.remove();
+    });
+  }
+
   Widget _buildTicketInfoTab() {
     return Padding(
       padding: const EdgeInsets.all(10.0),
       child: ListView(
         children: [
-          Card(
-              margin: const EdgeInsets.symmetric(horizontal: 5, vertical: 10),
-              elevation: 5,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15),
-              ),
-              color: Colors.blue[50], // Light blue background for the card
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Icon for the reminder
-                    Icon(
-                      Icons.warning_amber_outlined,
-                      color: Colors.orange[700],
-                      size: 30,
-                    ),
-                    const SizedBox(width: 10), // Add space between icon and text
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Reminder:",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: Colors.orange[700],
-                            ),
-                          ),
-                          const SizedBox(height: 8), // Add space between "Reminder" and the text
-                          const Text(
-                            "Please don't input the exact location, just close to it and don't describe the item too much to avoid false-claim. Check the School ID of the claimer to verify identity.",
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.black87,
-                            ),
-                            textAlign: TextAlign.start,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+
           _buildTextField("Item Name", _itemNameController),
           _buildTextField("Description", _descriptionController),
           GestureDetector(
@@ -408,7 +468,7 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
             onTap: _pickLocation,
             child: AbsorbPointer(
               child: ListTile(
-                title: const Text("Last Seen Location"),
+                title: const Text("Location Lost/Found"),
                 subtitle: Text(_lastSeenLocation),
                 trailing: const Icon(Icons.map),
               ),

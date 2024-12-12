@@ -6,6 +6,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 class AuthService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+
+// Inside AuthService
+  Future<bool> isLoggedIn() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.containsKey('userData'); // Returns true if 'userData' exists
+  }
+
+
   // Login using school ID (which is the document ID in Firestore)
   Future<Map<String, dynamic>> loginWithSchoolId(String schoolId, String password) async {
     try {

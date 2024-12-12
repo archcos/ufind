@@ -74,14 +74,22 @@ class _SplashScreenState extends State<SplashScreen> {
     final prefs = await SharedPreferences.getInstance();
     final isFirstTime = prefs.getBool('first_time') ?? true;
 
-    /// Navigate based on first-time status
-    if (isFirstTime) {
-      await prefs.setBool('first_time', false);
-      _navigateTo(const LandingPage());
+    // Check if user is logged in using Supabase session
+    final session = Supabase.instance.client.auth.currentSession;
+    if (session != null) {
+      // User is logged in, navigate to the homepage
+      _navigateTo( HomePage());
     } else {
-      _navigateTo(const SigninPage());
+      // If it's the first time, navigate to the landing page, otherwise to the signin page
+      if (isFirstTime) {
+        await prefs.setBool('first_time', false);
+        _navigateTo(const LandingPage());
+      } else {
+        _navigateTo(const SigninPage());
+      }
     }
   }
+
 
   /// Centralized navigation method
   void _navigateTo(Widget page) {

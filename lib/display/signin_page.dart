@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // For session management
 import '../services/auth_service.dart';
 
 class SigninPage extends StatefulWidget {
@@ -14,7 +15,32 @@ class _SigninPageState extends State<SigninPage> {
   final AuthService _authService = AuthService();
 
   bool _isLoading = false;
+  bool _isPasswordHidden = true;
 
+  @override
+  void initState() {
+    super.initState();
+    _checkUserSession(); // Check if user is already logged in
+  }
+
+  // Step 1: Check if the user session exists
+  Future<void> _checkUserSession() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    final isLoggedIn = await _authService.isLoggedIn();
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (isLoggedIn) {
+      // If the user is logged in, redirect to the homepage
+      Navigator.pushReplacementNamed(context, '/homepage');
+    }
+  }
+
+  // Step 2: Login method
   void _login() async {
     setState(() {
       _isLoading = true;
@@ -31,7 +57,7 @@ class _SigninPageState extends State<SigninPage> {
       return;
     }
 
-    // Try to login with school ID
+    // Try to log in using AuthService
     final loginData = await _authService.loginWithSchoolId(schoolId, password);
 
     setState(() {
@@ -39,9 +65,9 @@ class _SigninPageState extends State<SigninPage> {
     });
 
     if (loginData['success']) {
-      var userData = loginData['user'];  // This is the user data fetched from Firestore
+      var userData = loginData['user']; // Get user data from response
 
-      // Save user data locally (example using SharedPreferences)
+      // Save user data locally in SharedPreferences
       _saveUserDataLocally(userData);
 
       _showMessage(loginData['message']);
@@ -51,10 +77,13 @@ class _SigninPageState extends State<SigninPage> {
     }
   }
 
-  void _saveUserDataLocally(Map<String, dynamic> userData) {
-    // Save user data to SharedPreferences (already done in AuthService)
+  // Step 3: Save user data locally in SharedPreferences
+  Future<void> _saveUserDataLocally(Map<String, dynamic> userData) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('userData', userData.toString()); // Save user data as string
   }
 
+  // Show a message (error/success)
   void _showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
@@ -64,7 +93,9 @@ class _SigninPageState extends State<SigninPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator()) // Show a loader if checking session
+          : Container(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -106,7 +137,7 @@ class _SigninPageState extends State<SigninPage> {
             const SizedBox(height: 20),
             TextField(
               controller: _passwordController,
-              obscureText: true,
+              obscureText: _isPasswordHidden,
               decoration: InputDecoration(
                 filled: true,
                 fillColor: Colors.white,
@@ -116,6 +147,17 @@ class _SigninPageState extends State<SigninPage> {
                   borderSide: BorderSide.none,
                 ),
                 prefixIcon: const Icon(Icons.lock, color: Colors.blue),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _isPasswordHidden ? Icons.visibility : Icons.visibility_off,
+                    color: Colors.blue,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _isPasswordHidden = !_isPasswordHidden;
+                    });
+                  },
+                ),
               ),
             ),
             const SizedBox(height: 30),

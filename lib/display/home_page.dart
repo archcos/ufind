@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:untitled/display/message_list.dart';
 import '../services/auth_service.dart';  // Import AuthService
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -27,6 +28,31 @@ class HomePage extends StatelessWidget {
     return '$firstName $lastName';
   }
 
+  Future<String> _getUserId() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? userId = prefs.getString('user_school_id');  // Replace with actual key for userId
+    return userId ?? '';  // Return an empty string if no userId found
+  }
+
+  Future<void> _handlePopupMenuSelection(String value, BuildContext context) async {
+    if (value == 'profile') {
+      // Navigate to profile page when profile is selected
+      Navigator.pushNamed(context, '/profile');
+    } else if (value == 'message') {
+      // Fetch the userId and navigate to the message list using Navigator.push()
+      String userId = await _getUserId();
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MessagesListPage(userId: userId),
+        ),
+      );
+    } else if (value == 'logout') {
+      // Perform logout when logout is selected
+      _logout(context);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -40,18 +66,17 @@ class HomePage extends StatelessWidget {
             backgroundImage: AssetImage('assets/images/profile.jpg'),  // Replace with your profile image
           ),
           onSelected: (String value) {
-            if (value == 'profile') {
-              // Navigate to profile page when profile is selected
-              Navigator.pushNamed(context, '/profile');
-            } else if (value == 'logout') {
-              // Perform logout when logout is selected
-              _logout(context);
-            }
+            // Call a method to handle the logic for 'message'
+            _handlePopupMenuSelection(value, context);
           },
           itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
             const PopupMenuItem<String>(
               value: 'profile',
-              child: Text('Open Profile'),
+              child: Text('Profile'),
+            ),
+            const PopupMenuItem<String>(
+              value: 'message',
+              child: Text('Messages'),
             ),
             const PopupMenuItem<String>(
               value: 'logout',

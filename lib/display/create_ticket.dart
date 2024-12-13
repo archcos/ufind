@@ -41,7 +41,26 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _loadSavedContactInfo();
   }
+
+  Future<void> _loadSavedContactInfo() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    // Get saved Full Name and Email using the correct keys
+    String? savedFirstName = prefs.getString('user_first_name');
+    String? savedLastName = prefs.getString('user_last_name');
+    String? savedEmail = prefs.getString('user_email');
+
+    // Set the initial values if they exist
+    if (savedFirstName != null && savedLastName != null) {
+      _contactNameController.text = '$savedFirstName $savedLastName'; // Combine first and last name
+    }
+    if (savedEmail != null) {
+      _emailController.text = savedEmail;
+    }
+  }
+
 
   // Show Item Type Selection Dialog
   void _showItemTypeDialog() {
@@ -488,7 +507,7 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
       padding: const EdgeInsets.all(16.0),
       child: ListView(
         children: [
-          _buildTextField("Full Name", _contactNameController),
+          _buildTextField("Full Name", _contactNameController, placeholder: "Enter your full name"),
           TextField(
             controller: _contactNumberController,
             keyboardType: TextInputType.phone,
@@ -500,19 +519,20 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
               border: OutlineInputBorder(),
             ),
           ),
-          _buildTextField("Email", _emailController),
+          _buildTextField("Email", _emailController, placeholder: "Enter your email"),
         ],
       ),
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller) {
+  Widget _buildTextField(String label, TextEditingController controller, {String? placeholder}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextField(
         controller: controller,
         decoration: InputDecoration(
           labelText: label,
+          hintText: placeholder,  // Set placeholder text
           border: const OutlineInputBorder(),
         ),
       ),

@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 class InitialChatPage extends StatefulWidget {
   final String userId;
   final String receiverId;
-  final String itemName;  // Add item name parameter
+  final String itemName; // Add item name parameter
 
   InitialChatPage({required this.userId, required this.receiverId, required this.itemName});
 
@@ -15,11 +15,11 @@ class InitialChatPage extends StatefulWidget {
 
 class _InitialChatPageState extends State<InitialChatPage> {
   final TextEditingController _controller = TextEditingController();
-  bool isFirstMessage = true;  // Flag to track the first message
+  bool isFirstMessage = true; // Flag to track if it's the first message
 
-  Future<void> sendMessage(String senderId, String receiverId, String message, String itemName) async {
+  Future<void> sendMessage(String senderId, String receiverId, String message, {String? itemName}) async {
     final timestamp = FieldValue.serverTimestamp();
-    final isRead = false;  // Initially, the message is unread
+    final isRead = false; // Initially, the message is unread
 
     // Send the message to Firestore
     await FirebaseFirestore.instance.collection('messages').add({
@@ -27,8 +27,8 @@ class _InitialChatPageState extends State<InitialChatPage> {
       'receiver': receiverId,
       'message': message,
       'timestamp': timestamp,
-      'isRead': isRead,  // Set the message as unread initially
-      'itemName': itemName,  // Store the item name
+      'isRead': isRead, // Set the message as unread initially
+      'itemName': itemName ?? '', // Store the item name if provided
     });
   }
 
@@ -52,14 +52,14 @@ class _InitialChatPageState extends State<InitialChatPage> {
   String formatTimestamp(Timestamp? timestamp) {
     if (timestamp == null) return 'Pending...';
     final dateTime = timestamp.toDate();
-    return DateFormat('MM-dd-yyyy hh:mm a').format(dateTime);  // Example: "2024-12-13 02:45 PM"
+    return DateFormat('MM-dd-yyyy hh:mm a').format(dateTime); // Example: "2024-12-13 02:45 PM"
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.itemName),  // Use the itemName as the title in the app bar
+        title: Text(widget.itemName), // Use the itemName as the title in the app bar
       ),
       body: Column(
         children: [
@@ -128,21 +128,26 @@ class _InitialChatPageState extends State<InitialChatPage> {
                   icon: Icon(Icons.send),
                   onPressed: () async {
                     if (_controller.text.isNotEmpty) {
-                      String message = _controller.text;
+                      String userMessage = _controller.text;
 
-                      if (isFirstMessage) {
-                        message = widget.itemName;  // Send item name as the first message
-                        isFirstMessage = false;  // Set the flag to false after the first message is sent
-                      }
-
-                      // Send the message
-                      sendMessage(
+                      // Send the first user message
+                      await sendMessage(
                         widget.userId,
                         widget.receiverId,
-                        message,
-                        widget.itemName,  // Send the item name along with the message
+                        userMessage,
                       );
-                      _controller.clear();
+
+                      // If it's the first message, send the item name as the second message
+                      if (isFirstMessage) {
+                        await sendMessage(
+                          widget.userId,
+                          widget.receiverId,
+                          'ITEM NAME: ${widget.itemName}',
+                        );
+                        isFirstMessage = false; // Update the flag after the first message
+                      }
+
+                      _controller.clear(); // Clear the input field
                     }
                   },
                 ),

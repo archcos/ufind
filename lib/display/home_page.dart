@@ -143,6 +143,19 @@ class HomePage extends StatelessWidget {
                 ),
                 ListTile(
                   leading: const Icon(Icons.add_box),
+                  title: const Text('Messages'),
+                  onTap: () async { // Mark the onTap callback as async
+                    String userId = await _getUserId(); // Await the Future to get the String value
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => MessagesListPage(userId: userId),
+                      ),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.add_box),
                   title: const Text('Create Ticket'),
                   onTap: () {
                     Navigator.pushNamed(context, '/create-ticket');

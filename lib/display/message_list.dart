@@ -16,17 +16,19 @@ class MessagesListPage extends StatelessWidget {
     return '$firstName $lastName';
   }
 
-  // Function to generate a random color
-  Color getRandomColor() {
-    final random = Random();
-    return Color.fromARGB(
-      255, // Opacity (fully opaque)
-      random.nextInt(256), // Red (0-255)
-      random.nextInt(256), // Green (0-255)
-      random.nextInt(256), // Blue (0-255)
-    );
+  // Function to calculate the unread message count for each sender
+  Future<int> _getUnreadCount(String senderId) async {
+    final snapshot = await FirebaseFirestore.instance
+        .collection('messages')
+        .where('receiver', isEqualTo: userId)
+        .where('sender', isEqualTo: senderId)
+        .where('isRead', isEqualTo: false)
+        .get();
+
+    return snapshot.docs.length;
   }
 
+  // Stream to get the senders of messages
   Stream<List<String>> getSenders(String userId) {
     return FirebaseFirestore.instance
         .collection('messages')
@@ -83,7 +85,8 @@ class MessagesListPage extends StatelessWidget {
           return FutureBuilder<List<Map<String, String>>>(
             future: Future.wait(senders.map((sender) async {
               String fullName = await _getSenderFullName(sender);
-              return {'senderId': sender, 'fullName': fullName};
+              int unreadCount = await _getUnreadCount(sender);
+              return {'senderId': sender, 'fullName': fullName, 'unreadCount': unreadCount.toString()};
             }).toList()),
             builder: (context, futureSnapshot) {
               if (futureSnapshot.connectionState == ConnectionState.waiting) {
@@ -107,6 +110,7 @@ class MessagesListPage extends StatelessWidget {
                   final sender = senderDetails[index];
                   final senderId = sender['senderId']!;
                   final fullName = sender['fullName']!;
+                  final unreadCount = sender['unreadCount']!;
                   final initials = fullName
                       .split(' ')
                       .map((e) => e.isNotEmpty ? e[0] : '')
@@ -132,12 +136,29 @@ class MessagesListPage extends StatelessWidget {
                           fullName,
                           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                         ),
-                        subtitle: Text(
+                        subtitle: unreadCount != '0'
+                            ? Text(
+                          "$unreadCount unread messages",
+                          style: TextStyle(color: Colors.red, fontSize: 14),
+                        )
+                            : Text(
                           "Tap to view messages",
                           style: TextStyle(color: Colors.grey[600], fontSize: 14),
                         ),
                         trailing: Icon(Icons.arrow_forward_ios, color: Colors.teal),
-                        onTap: () {
+                        onTap: () async {
+                          // Mark messages as read when opening the chat
+                          final query = FirebaseFirestore.instance
+                              .collection('messages')
+                              .where('sender', isEqualTo: senderId)
+                              .where('receiver', isEqualTo: userId)
+                              .where('isRead', isEqualTo: false);
+
+                          final snapshot = await query.get();
+                          for (var doc in snapshot.docs) {
+                            doc.reference.update({'isRead': true});
+                          }
+
                           Navigator.push(
                             context,
                             MaterialPageRoute(

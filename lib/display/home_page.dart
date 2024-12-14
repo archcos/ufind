@@ -20,6 +20,32 @@ class HomePage extends StatelessWidget {
     Navigator.pushReplacementNamed(context, '/signin');
   }
 
+  Future<int> _getUnreadMessagesCount(String userId) async {
+    try {
+      // Query the Firestore collection for messages where 'userId' matches and 'isRead' is false
+      QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection('messages')
+          .where('receiver', isEqualTo: userId)  // Ensure we filter by userId
+          .where('isRead', isEqualTo: false)  // Filter by unread messages (isRead = false)
+          .get();
+
+      // Return the count of unread messages
+      return snapshot.size;
+    } catch (e) {
+      print("Error fetching unread messages: $e");
+      return 0;  // Return 0 if there's an error
+    }
+  }
+
+  Stream<int> _getUnreadMessagesCountStream(String userId) {
+    return FirebaseFirestore.instance
+        .collection('messages')
+        .where('receiver', isEqualTo: userId)  // Filter by userId
+        .where('isRead', isEqualTo: false)  // Only unread messages
+        .snapshots()
+        .map((snapshot) => snapshot.size);  // Return the count of unread messages
+  }
+
   // Fetch user full name from SharedPreferences
   Future<String> _getUserFullName() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -60,34 +86,98 @@ class HomePage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,  // Makes the AppBar transparent
         elevation: 0,  // Removes the shadow of the AppBar
-        leading: PopupMenuButton<String>( // Move CircleAvatar to leading section
-          icon: const CircleAvatar(
-            radius: 20,
-            backgroundImage: AssetImage('assets/images/profile.jpg'),  // Replace with your profile image
-          ),
-          onSelected: (String value) {
-            // Call a method to handle the logic for 'message'
-            _handlePopupMenuSelection(value, context);
+        leading: FutureBuilder<String>(
+          future: _getUserId(),  // Fetch user ID first
+          builder: (context, userIdSnapshot) {
+            if (userIdSnapshot.connectionState == ConnectionState.waiting) {
+              return const CircleAvatar(
+                radius: 20,
+                backgroundImage: AssetImage('assets/images/profile.jpg'),  // Placeholder
+              );
+            }
+
+            if (userIdSnapshot.hasError || !userIdSnapshot.hasData) {
+              return const CircleAvatar(
+                radius: 20,
+                backgroundImage: AssetImage('assets/images/profile.jpg'),  // Placeholder
+              );
+            }
+
+            String userId = userIdSnapshot.data!;
+
+            // Use StreamBuilder to listen to unread messages count
+            return StreamBuilder<int>(
+              stream: _getUnreadMessagesCountStream(userId),  // Listen to unread messages count stream
+              builder: (context, unreadMessagesSnapshot) {
+                if (unreadMessagesSnapshot.connectionState == ConnectionState.waiting) {
+                  return const CircleAvatar(
+                    radius: 20,
+                    backgroundImage: AssetImage('assets/images/profile.jpg'),  // Placeholder
+                  );
+                }
+
+                if (unreadMessagesSnapshot.hasError || !unreadMessagesSnapshot.hasData) {
+                  return const CircleAvatar(
+                    radius: 20,
+                    backgroundImage: AssetImage('assets/images/profile.jpg'),  // Placeholder
+                  );
+                }
+
+                int unreadCount = unreadMessagesSnapshot.data!;
+
+                return PopupMenuButton<String>(
+                  icon: Stack(
+                    children: [
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundImage: AssetImage('assets/images/profile.jpg'),  // Your profile image
+                      ),
+                      if (unreadCount > 0)
+                        Positioned(
+                          right: 0,
+                          top: 0,
+                          child: CircleAvatar(
+                            radius: 10,
+                            backgroundColor: Colors.red,
+                            child: Text(
+                              '$unreadCount',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  onSelected: (String value) {
+                    _handlePopupMenuSelection(value, context);  // Handle menu item selection
+                  },
+                  itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                    const PopupMenuItem<String>(
+                      value: 'profile',
+                      child: Text('Profile'),
+                    ),
+                    const PopupMenuItem<String>(
+                      value: 'message',
+                      child: Text('Messages'),
+                    ),
+                    const PopupMenuItem<String>(
+                      value: 'logout',
+                      child: Text('Logout'),
+                    ),
+                  ],
+                );
+              },
+            );
           },
-          itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-            const PopupMenuItem<String>(
-              value: 'profile',
-              child: Text('Profile'),
-            ),
-            const PopupMenuItem<String>(
-              value: 'message',
-              child: Text('Messages'),
-            ),
-            const PopupMenuItem<String>(
-              value: 'logout',
-              child: Text('Logout'),
-            ),
-          ],
         ),
         actions: [
-          // You can add additional actions here if needed
+          // Add additional actions if needed
         ],
       ),
+
       endDrawer: FutureBuilder<String>( // Use endDrawer to open the drawer from the right
         future: _getUserFullName(), // Fetch the user's full name
         builder: (context, snapshot) {
@@ -142,7 +232,7 @@ class HomePage extends StatelessWidget {
                   },
                 ),
                 ListTile(
-                  leading: const Icon(Icons.add_box),
+                  leading: const Icon(Icons.message),
                   title: const Text('Messages'),
                   onTap: () async { // Mark the onTap callback as async
                     String userId = await _getUserId(); // Await the Future to get the String value

@@ -84,7 +84,9 @@ class _ItemsListPageState extends State<ItemsListPage> {
               .where((ticket) =>
           (ticket.itemName.toLowerCase().contains(searchQuery) ||
               ticket.description.toLowerCase().contains(searchQuery)) &&
-              (typeFilter == "All" || ticket.itemType == typeFilter))
+              (typeFilter == "All" || ticket.itemType == typeFilter) &&
+              ticket.status != "Completed" // Exclude tickets with status 'Completed'
+          )
               .toList();
 
           return GridView.builder(

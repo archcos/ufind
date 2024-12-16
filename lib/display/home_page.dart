@@ -347,12 +347,21 @@ class HomePage extends StatelessWidget {
             StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('tickets')
+                  .where('status', isNotEqualTo: 'Completed')  // Exclude completed tickets
                   .orderBy('dateTime', descending: true)  // Sorting by dateTime in descending order
                   .limit(6)  // Limiting to 6 items (2 rows of 3 items each)
                   .snapshots(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Text(
+                        "No recent tickets found.",
+                        style: TextStyle(fontSize: 16, color: Colors.black54),
+                      ),
+                    ),
+                  );
                 }
 
                 final tickets = snapshot.data!.docs.map((doc) {
@@ -360,6 +369,7 @@ class HomePage extends StatelessWidget {
                     'itemName': doc['itemName'] ?? '',
                     'imageUrl': doc['imageUrl'] ?? '',
                     'itemType': doc['itemType'] ?? 'Found',  // Fetching itemType
+                    'status': doc['status'] ?? 'Active',  // Fetching status
                   };
                 }).toList();
 

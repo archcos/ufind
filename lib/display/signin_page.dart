@@ -99,7 +99,7 @@ class _SigninPageState extends State<SigninPage> {
         padding: const EdgeInsets.symmetric(horizontal: 20),
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.lightBlueAccent, Colors.purpleAccent],
+            colors: [Colors.lightBlueAccent, Colors.lightBlue],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -107,9 +107,11 @@ class _SigninPageState extends State<SigninPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const CircleAvatar(
-              radius: 60,
-              backgroundImage: AssetImage('assets/images/logo.png'),
+            Image.asset(
+              'assets/images/logo.png',
+              width: 120, // Set the desired width
+              height: 120, // Set the desired height
+              fit: BoxFit.cover, // Adjust how the image is fitted within the widget
             ),
             const SizedBox(height: 20),
             const Text(

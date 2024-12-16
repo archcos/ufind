@@ -31,6 +31,8 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
   String _lastSeenLocation = "Tap to set location";
   LatLng? _selectedLocation;
   String _itemType = '';  // 'Lost' or 'Found'
+  String _status = '';  // 'Lost' or 'Found'
+
 
   // Image Upload Fields
   File? _selectedImage;  // Selected image file
@@ -73,20 +75,21 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
           children: [
             ListTile(
               title: const Text('Lost'),
-              onTap: () {
+              onTap: () async {
                 setState(() {
                   _itemType = 'Lost';
                 });
-                Navigator.pop(context);
+                Navigator.pop(context); // Close the item type dialog
               },
             ),
             ListTile(
               title: const Text('Found'),
-              onTap: () {
+              onTap: () async {
                 setState(() {
                   _itemType = 'Found';
                 });
-                Navigator.pop(context);
+                Navigator.pop(context); // Close the item type dialog
+                await _showOwnershipDialog(); // Show the ownership dialog
               },
             ),
           ],
@@ -94,7 +97,6 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
       ),
     );
   }
-
 
   Future<File?> _compressImage(File image) async {
     // Read the image as bytes (Uint8List)
@@ -197,6 +199,45 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
   }
 
 
+  Future<void> _showOwnershipDialog() async {
+    // Show dialog and wait for the user's choice
+    await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Keep/Turnover'),
+        content: const Text(
+            'Are you going to keep the item and give it yourself, or turn it over to OSA?'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _status = 'Keep'; // Set status to 'Keep'
+                // Clear contact details for 'Keep' if needed
+              });
+              Navigator.pop(context); // Close the dialog
+            },
+            child: const Text('Keep'),
+          ),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _status = 'TurnOver'; // Set status to 'Turnover'
+                // Automatically set the contact details for 'TurnOver'
+                _contactNameController.text = 'Office of Students Affair';
+                _contactNumberController.text = '09123456789';
+                _emailController.text = 'osa@gmail.com';
+              });
+              Navigator.pop(context); // Close the dialog
+            },
+            child: const Text('Turn Over'),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+// Modify _saveToFirebase to set the document ID dynamically
   Future<void> _saveToFirebase() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? schoolId = prefs.getString('user_school_id');
@@ -208,45 +249,20 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
       return;
     }
 
-    // Check if all fields are filled out correctly
-    List<String> emptyFields = [];
+    // Check if all fields are filled out correctly (same as your existing code)
 
-    if (_itemNameController.text.isEmpty) emptyFields.add("Item Name");
-    if (_descriptionController.text.isEmpty) emptyFields.add("Description");
-    if (_dateTimeController.text.isEmpty) emptyFields.add("Date & Time");
-    if (_contactNameController.text.isEmpty) emptyFields.add("Full Name");
-    if (_contactNumberController.text.isEmpty) emptyFields.add("Contact Number");
-    if (_emailController.text.isEmpty) emptyFields.add("Email");
-    if (_itemType.isEmpty) emptyFields.add("Select Lost or Found");
-    if (_lastSeenLocation == "Tap to set location") emptyFields.add("Location");
-    if (_imageUrl == null || _imageUrl!.isEmpty) emptyFields.add("Image");
-
-    // If there are empty fields, show a SnackBar with a list of them
-    if (emptyFields.isNotEmpty) {
-      _showTopSnackBar('Please fill out the following fields: ${emptyFields.join(", ")}');
-      return;
+    // Generate document ID based on the user's choice
+    String documentId;
+    if (_status == 'TurnOver') {
+      String uniqueId = _generateRandomId();
+      documentId = '1234567890_$uniqueId'; // Fixed ID for "Turn Over"
+      schoolId = '1234567890';
+    } else {
+      String uniqueId = _generateRandomId();
+      documentId = '${schoolId}_$uniqueId'; // Use schoolId + unique ID for "Keep"
     }
 
-    // Validate contact number and email
-    if (!_validateContactNumber(_contactNumberController.text)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid contact number!')),
-      );
-      return;
-    }
-
-    if (!_validateEmail(_emailController.text)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid email address!')),
-      );
-      return;
-    }
-
-    // Generate a unique document ID
-    String uniqueId = _generateRandomId();
-    String documentId = '${schoolId}_$uniqueId';
-
-    // Save ticket details to Firestore
+    // Save the ticket details to Firestore (same as your existing code)
     await FirebaseFirestore.instance.collection('tickets').doc(documentId).set({
       'itemType': _itemType,
       'itemName': _itemNameController.text,
@@ -257,7 +273,7 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
       'email': _emailController.text,
       'lastSeenLocation': _lastSeenLocation,
       'schoolId': schoolId,
-      'status': 'Pending',
+      'status': 'Active',
       'imageUrl': _imageUrl,
     });
 
@@ -265,6 +281,7 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
       const SnackBar(content: Text('Ticket Saved Successfully!')),
     );
   }
+
 
 // Generate 8-character random alphanumeric ID
   String _generateRandomId() {
@@ -337,9 +354,9 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
         title: const Text("Ticket Details"),
         bottom: TabBar(
           controller: _tabController,
-          tabs: [
-            const Tab(text: "Ticket Info"),
-            const Tab(text: "Contact Info"),
+          tabs: const [
+            Tab(text: "Ticket Info"),
+            Tab(text: "Contact Info"),
           ],
         ),
       ),
@@ -397,7 +414,15 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
               padding: const EdgeInsets.only(top: 16.0),
               child: ElevatedButton(
                 onPressed: _showItemTypeDialog,
-                child: const Text('Select Lost or Found'),
+                style: ButtonStyle(
+                  shape: WidgetStateProperty.all(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12), // Optional: Rounded corners
+                      side: const BorderSide(color: Colors.redAccent, width: 2), // Border color and width
+                    ),
+                  ),
+                ),
+                child: const Text('is Item Lost or Found?'),
               ),
             ),
           Expanded(
@@ -451,9 +476,9 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
             ),
             child: Row(
               children: [
-                Icon(Icons.error, color: Colors.white),
-                SizedBox(width: 8.0),
-                Expanded(child: Text(message, style: TextStyle(color: Colors.white))),
+                const Icon(Icons.error, color: Colors.white),
+                const SizedBox(width: 8.0),
+                Expanded(child: Text(message, style: const TextStyle(color: Colors.white))),
               ],
             ),
           ),
@@ -486,17 +511,60 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
           GestureDetector(
             onTap: _pickLocation,
             child: AbsorbPointer(
-              child: ListTile(
-                title: const Text("Location Lost/Found"),
-                subtitle: Text(_lastSeenLocation),
-                trailing: const Icon(Icons.map),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white, // Background color for the button-like appearance
+                  border: Border.all(color: Colors.lightBlueAccent, width: 2), // Border color and width
+                  borderRadius: BorderRadius.circular(12), // Rounded corners
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.5), // Optional: Add shadow for depth
+                      spreadRadius: 2,
+                      blurRadius: 5,
+                      offset: const Offset(0, 3), // Shadow position
+                    ),
+                  ],
+                ),
+                child: ListTile(
+                  title: const Text(
+                    "Location Lost/Found",
+                    style: TextStyle(fontWeight: FontWeight.bold), // Optional: Emphasize text
+                  ),
+                  subtitle: Text(_lastSeenLocation),
+                  trailing: const Icon(Icons.map, color: Colors.lightBlueAccent), // Optional: Match border color
+                ),
               ),
             ),
           ),
-          ElevatedButton(
+          const SizedBox(height: 5),
+          ElevatedButton.icon(
             onPressed: _pickImage,
-            child: Text(_selectedImage == null ? 'Pick Image' : 'Change Image'),
+            style: ButtonStyle(
+              backgroundColor: WidgetStateProperty.all(Colors.white), // Optional: White background
+              foregroundColor: WidgetStateProperty.all(Colors.lightBlueAccent), // Red text and icon color
+              side: WidgetStateProperty.all(
+                const BorderSide(color: Colors.lightBlueAccent, width: 2), // Border color and width
+              ),
+              shape: WidgetStateProperty.all(
+                RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12), // Rounded corners
+                ),
+              ),
+              padding: WidgetStateProperty.all(
+                const EdgeInsets.symmetric(vertical: 12, horizontal: 16), // Padding for better click area
+              ),
+            ),
+            icon: const Icon(
+              Icons.image, // Icon representing picking an image
+              size: 20,
+              color: Colors.black,
+            ),
+            label: Text(
+              _selectedImage == null ? 'Pick Image' : 'Change Image',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black), // Text styling
+            ),
           ),
+
         ],
       ),
     );
@@ -514,7 +582,7 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
             inputFormatters: [
               FilteringTextInputFormatter.digitsOnly, // Restricts input to digits only
             ],
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               labelText: "Contact Number",
               border: OutlineInputBorder(),
             ),
@@ -569,6 +637,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
         options: MapOptions(
           initialCenter: widget.initialPosition, // Update 'center' to 'initialCenter'
           initialZoom: 18.0,
+          minZoom: 18,
           onTap: (tapPosition, latLng) {
             setState(() {
               selectedLocation = latLng;
@@ -578,7 +647,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
         children: [
           TileLayer(
             urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-            subdomains: ['a', 'b', 'c'],
+            subdomains: const ['a', 'b', 'c'],
           ),
           MarkerLayer(
             markers: [

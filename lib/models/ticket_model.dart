@@ -11,6 +11,8 @@ class Ticket {
   final String lastSeenLocation;
   final String imageUrl;
   final String itemType;
+  final String status;
+
 
   Ticket({
     required this.id, // Include ID in constructor
@@ -23,6 +25,7 @@ class Ticket {
     required this.lastSeenLocation,
     required this.imageUrl,
     required this.itemType,
+    required this.status
   });
 
   factory Ticket.fromDocument(DocumentSnapshot doc) {
@@ -37,6 +40,8 @@ class Ticket {
       lastSeenLocation: doc['lastSeenLocation'] ?? '',
       imageUrl: doc['imageUrl'] ?? '',
       itemType: doc['itemType'] ?? '',
+      status: doc['status'] ?? ''
+
     );
   }
 }

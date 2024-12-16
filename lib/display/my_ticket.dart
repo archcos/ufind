@@ -4,8 +4,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:ui';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/ticket_model.dart';
+import 'package:intl/intl.dart'; // Import the intl package for formatting
 
 class MyTicketPage extends StatelessWidget {
+
   Future<String?> _getSchoolId() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getString('user_school_id');
@@ -13,6 +15,7 @@ class MyTicketPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("My Tickets"),
@@ -48,7 +51,7 @@ class MyTicketPage extends StatelessWidget {
                   crossAxisCount: 2,
                   crossAxisSpacing: 8,
                   mainAxisSpacing: 8,
-                  childAspectRatio: 0.7,
+                  childAspectRatio: 0.59,
                 ),
                 itemCount: tickets.length,
                 itemBuilder: (context, index) {
@@ -69,9 +72,9 @@ class MyTicketPage extends StatelessWidget {
                                 imageUrl: ticket.imageUrl,
                                 fit: BoxFit.cover,
                                 placeholder: (context, url) =>
-                                    const Center(child: CircularProgressIndicator()),
+                                const Center(child: CircularProgressIndicator()),
                                 errorWidget: (context, url, error) =>
-                                    const Icon(Icons.error, color: Colors.red),
+                                const Icon(Icons.error, color: Colors.red),
                               ),
                             ),
                           ),
@@ -87,10 +90,9 @@ class MyTicketPage extends StatelessWidget {
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
                                   ),
-                                  maxLines: 2,
+                                  maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                                const SizedBox(height: 4),
                                 Text(
                                   ticket.dateTime,
                                   style: TextStyle(
@@ -131,6 +133,32 @@ class MyTicketPage extends StatelessWidget {
                                     ),
                                   ],
                                 ),
+                                // New "Mark as Completed" button below the icons
+                                Center(
+                                  child: TextButton(
+                                    onPressed: ticket.status == 'Active'
+                                        ? () {
+                                      _showCompletionDialog(context, ticket);
+                                    }
+                                        : null, // Disable if the status is not 'Active'
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: Colors.white,
+                                      backgroundColor: ticket.status == 'Active'
+                                          ? Colors.red // Red for "Mark as Completed"
+                                          : Colors.green, // Green for "Completed"
+                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      ticket.status == 'Active'
+                                          ? "Mark as Completed"
+                                          : "Completed", // Show different text based on the status
+                                      style: const TextStyle(fontSize: 10),
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -145,6 +173,103 @@ class MyTicketPage extends StatelessWidget {
         },
       ),
     );
+  }
+
+  void _showCompletionDialog(BuildContext context, Ticket ticket) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Ticket Completion'),
+          content: const Text('Is this ticket completed?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Close the dialog
+              },
+              child: const Text('No'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Close the dialog
+                _showClaimDialog(context, ticket); // Show the claim details dialog
+              },
+              child: const Text('Yes'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showClaimDialog(BuildContext context, Ticket ticket) {
+    final _claimFormKey = GlobalKey<FormState>();
+    String? claimerId;
+    String? claimerName;
+    String? dateReceived = DateFormat('MMM dd, yyyy, hh:mm a').format(DateTime.now()); // Set to current date and time
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Claim/Find Details'),
+          content: Form(
+            key: _claimFormKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  decoration: const InputDecoration(labelText: 'Claimer/Finders ID'),
+                  onSaved: (value) => claimerId = value,
+                  validator: (value) => value!.isEmpty ? 'Please enter an ID' : null,
+                ),
+                TextFormField(
+                  decoration: const InputDecoration(labelText: 'Claimer/Finders Name'),
+                  onSaved: (value) => claimerName = value,
+                  validator: (value) => value!.isEmpty ? 'Please enter a name' : null,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Close the dialog
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                if (_claimFormKey.currentState!.validate()) {
+                  _claimFormKey.currentState!.save();
+                  // Process the claim details
+                  _updateTicketWithClaimDetails(ticket, claimerId!, claimerName!, dateReceived!);
+                  Navigator.pop(context); // Close the dialog
+                }
+              },
+              child: const Text('Submit'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _updateTicketWithClaimDetails(Ticket ticket, String claimerId, String claimerName, String dateReceived) async {
+    try {
+      await FirebaseFirestore.instance.collection('claims').doc(ticket.id).set({
+        'claimerId': claimerId,
+        'claimerName': claimerName,
+        'dateReceived': dateReceived,
+        'status': 'Completed',
+      });
+      await FirebaseFirestore.instance.collection('tickets').doc(ticket.id).update({
+        'status': 'Completed',
+      });
+
+    } catch (error) {
+      print("Error updating ticket with claim details: $error");
+    }
   }
 
   void _confirmDelete(BuildContext context, Ticket ticket) {
@@ -180,6 +305,7 @@ class MyTicketPage extends StatelessWidget {
     }
   }
 }
+
 
 class EditTicketPage extends StatefulWidget {
   final Ticket ticket;
@@ -238,6 +364,40 @@ class _EditTicketPageState extends State<EditTicketPage> {
                   decoration: const InputDecoration(labelText: "Description"),
                   validator: (value) => value!.isEmpty ? "Enter description" : null,
                   onSaved: (value) => _description = value!,
+                ),
+                TextFormField(
+                    initialValue: widget.ticket.dateTime,
+                    decoration: const InputDecoration(labelText: "Date & Time"),
+                    readOnly: true, // Make the field read-only to open date picker
+                    validator: (value) =>
+                    value!.isEmpty ? "Please select a date and time" : null,
+                    onTap: () async {
+                      // Open Date Picker when tapped
+                      DateTime? selectedDateTime = await showDatePicker(
+                        context: context,
+                        initialDate: DateTime.now(),
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(2101),
+                      );
+
+                      if (selectedDateTime != null) {
+                        TimeOfDay? selectedTime = await showTimePicker(
+                          context: context,
+                          initialTime: TimeOfDay.fromDateTime(selectedDateTime),
+                        );
+
+                        if (selectedTime != null) {
+                          // Combine the selected date and time
+                          final dateTime = DateTime(
+                            selectedDateTime.year,
+                            selectedDateTime.month,
+                            selectedDateTime.day,
+                            selectedTime.hour,
+                            selectedTime.minute,
+                          );
+                        }
+                      }
+                    }
                 ),
                 TextFormField(
                   initialValue: widget.ticket.contactName,
@@ -313,7 +473,7 @@ class _EditTicketPageState extends State<EditTicketPage> {
                 ),
                 const SizedBox(height: 20),
                 Center(
-                  child:                 ElevatedButton(
+                  child: ElevatedButton(
                     child: const Text("Save Changes"),
                     onPressed: () {
                       if (_formKey.currentState!.validate()) {

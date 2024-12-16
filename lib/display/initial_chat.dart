@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
@@ -5,9 +6,8 @@ import 'package:intl/intl.dart';
 class InitialChatPage extends StatefulWidget {
   final String userId;
   final String receiverId;
-  final String itemName; // Add item name parameter
 
-  InitialChatPage({required this.userId, required this.receiverId, required this.itemName});
+  InitialChatPage({required this.userId, required this.receiverId});
 
   @override
   _InitialChatPageState createState() => _InitialChatPageState();
@@ -16,8 +16,10 @@ class InitialChatPage extends StatefulWidget {
 class _InitialChatPageState extends State<InitialChatPage> {
   final TextEditingController _controller = TextEditingController();
   bool isFirstMessage = true; // Flag to track if it's the first message
+  bool isPopupShown = false; // Ensure popup shows only once
+  final ScrollController _scrollController = ScrollController();
 
-  Future<void> sendMessage(String senderId, String receiverId, String message, {String? itemName}) async {
+  Future<void> sendMessage(String senderId, String receiverId, String message) async {
     final timestamp = FieldValue.serverTimestamp();
     final isRead = false; // Initially, the message is unread
 
@@ -28,7 +30,6 @@ class _InitialChatPageState extends State<InitialChatPage> {
       'message': message,
       'timestamp': timestamp,
       'isRead': isRead, // Set the message as unread initially
-      'itemName': itemName ?? '', // Store the item name if provided
     });
   }
 
@@ -55,14 +56,175 @@ class _InitialChatPageState extends State<InitialChatPage> {
     return DateFormat('MM-dd-yyyy hh:mm a').format(dateTime); // Example: "2024-12-13 02:45 PM"
   }
 
+  void _scrollToBottom() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
+  void showItemDetailsPopup() {
+    final TextEditingController descriptionController = TextEditingController();
+    final TextEditingController timeController = TextEditingController();
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text(
+            'Provide Item Details to make your inquiry faster',
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: descriptionController,
+                decoration: InputDecoration(labelText: 'Item Description '),
+              ),
+              TextField(
+                controller: timeController,
+                decoration: InputDecoration(labelText: 'Time Lost/Found'),
+                onTap: () async {
+                  final selectedDate = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now(),
+                    firstDate: DateTime(2000),
+                    lastDate: DateTime(2100),
+                  );
+                  if (selectedDate != null) {
+                    timeController.text = DateFormat('yyyy-MM-dd').format(selectedDate);
+                  }
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog without doing anything
+              },
+              child: Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final description = descriptionController.text.trim();
+                final time = timeController.text.trim();
+
+                if (description.isNotEmpty && time.isNotEmpty) {
+                  // Send the item details as the first message
+                  await sendMessage(
+                    widget.userId,
+                    widget.receiverId,
+                    'ITEM DETAILS: \nDescription: $description\nTime Lost/Found: $time',
+                  );
+
+                  setState(() {
+                    isPopupShown = true; // Prevent the popup from showing again
+                  });
+
+                  Navigator.of(context).pop(); // Close the dialog
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Please fill in all fields')),
+                  );
+                }
+              },
+              child: Text('Submit'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Show the popup when the page loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!isPopupShown) {
+        showItemDetailsPopup();
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.itemName), // Use the itemName as the title in the app bar
+        title: Text("Chat"), // Use the itemName as the title in the app bar
       ),
       body: Column(
         children: [
+          Card(
+            margin: const EdgeInsets.symmetric(horizontal: 5, vertical: 10),
+            elevation: 5,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
+            ),
+            color: Colors.blue[50], // Light blue background for the card
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Icon for the reminder
+                  Icon(
+                    Icons.warning_amber_outlined,
+                    color: Colors.orange[700],
+                    size: 20,
+                  ),
+                  const SizedBox(width: 10), // Add space between icon and text
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Reminder:",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            color: Colors.orange[700],
+                          ),
+                        ),
+                        RichText(
+                          textAlign: TextAlign.justify,
+                          text: TextSpan(
+                            style: const TextStyle(fontSize: 12, color: Colors.black87), // Default text style
+                            children: [
+                              const TextSpan(
+                                text: "Please update the Status of your ticket once you claim/give an item. ",
+                              ),
+                              TextSpan(
+                                text: "Click Here",
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.blue, // Blue color to indicate it's a link
+                                  decoration: TextDecoration.underline, // Underline to look like a link
+                                ),
+                                recognizer: TapGestureRecognizer()
+                                  ..onTap = () {
+                                    // Navigate to '/my-tickets' route when tapped
+                                    Navigator.pushNamed(context, '/my-tickets');
+                                  },
+                              ),
+                            ],
+                          ),
+                        )
+
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
           Expanded(
             child: StreamBuilder<List<Map<String, dynamic>>>(
               stream: getMessages(widget.userId, widget.receiverId),
@@ -76,7 +238,14 @@ class _InitialChatPageState extends State<InitialChatPage> {
                 }
 
                 final messages = snapshot.data!;
+
+                // Scroll to the bottom whenever new messages are loaded
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  _scrollToBottom();
+                });
+
                 return ListView.builder(
+                  controller: _scrollController,
                   itemCount: messages.length,
                   itemBuilder: (context, index) {
                     final message = messages[index];
@@ -130,22 +299,12 @@ class _InitialChatPageState extends State<InitialChatPage> {
                     if (_controller.text.isNotEmpty) {
                       String userMessage = _controller.text;
 
-                      // Send the first user message
+                      // Send user message
                       await sendMessage(
                         widget.userId,
                         widget.receiverId,
                         userMessage,
                       );
-
-                      // If it's the first message, send the item name as the second message
-                      if (isFirstMessage) {
-                        await sendMessage(
-                          widget.userId,
-                          widget.receiverId,
-                          'ITEM NAME: ${widget.itemName}',
-                        );
-                        isFirstMessage = false; // Update the flag after the first message
-                      }
 
                       _controller.clear(); // Clear the input field
                     }

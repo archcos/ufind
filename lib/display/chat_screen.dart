@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
@@ -99,7 +100,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
         _scrollController.position.maxScrollExtent,
-        duration: Duration(milliseconds: 300),
+        duration: const Duration(milliseconds: 300),
         curve: Curves.easeOut,
       );
     }
@@ -119,16 +120,79 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
       body: Column(
         children: [
+          Card(
+            margin: const EdgeInsets.symmetric(horizontal: 5, vertical: 10),
+            elevation: 5,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
+            ),
+            color: Colors.blue[50], // Light blue background for the card
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Icon for the reminder
+                  Icon(
+                    Icons.warning_amber_outlined,
+                    color: Colors.orange[700],
+                    size: 20,
+                  ),
+                  const SizedBox(width: 10), // Add space between icon and text
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Reminder:",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            color: Colors.orange[700],
+                          ),
+                        ),
+                        RichText(
+                          textAlign: TextAlign.justify,
+                          text: TextSpan(
+                            style: const TextStyle(fontSize: 12, color: Colors.black87), // Default text style
+                            children: [
+                              const TextSpan(
+                                text: "Please update the Status of your ticket once you claim/give an item. ",
+                              ),
+                              TextSpan(
+                                text: "Click Here",
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.blue, // Blue color to indicate it's a link
+                                  decoration: TextDecoration.underline, // Underline to look like a link
+                                ),
+                                recognizer: TapGestureRecognizer()
+                                  ..onTap = () {
+                                    // Navigate to '/my-tickets' route when tapped
+                                    Navigator.pushNamed(context, '/my-tickets');
+                                  },
+                              ),
+                            ],
+                          ),
+                        )
+
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
           Expanded(
             child: StreamBuilder<List<Map<String, dynamic>>>(
               stream: getMessages(widget.userId, widget.receiverId),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
+                  return const Center(child: CircularProgressIndicator());
                 }
 
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return Center(child: Text("No messages"));
+                  return const Center(child: Text("No messages"));
                 }
 
                 final messages = snapshot.data!;
@@ -166,14 +230,14 @@ class _ChatScreenState extends State<ChatScreen> {
                               style: TextStyle(
                                   color: isSender ? Colors.white : Colors.black),
                             ),
-                            SizedBox(height: 5),
+                            const SizedBox(height: 5),
                             Text(
                               message['timestamp'] != null
                                   ? formatTimestamp(
                                   message['timestamp'] as Timestamp?)
                                   : 'Pending...',
                               style:
-                              TextStyle(fontSize: 8, color: Colors.black54),
+                              const TextStyle(fontSize: 8, color: Colors.black54),
                             ),
                           ],
                         ),
@@ -191,11 +255,11 @@ class _ChatScreenState extends State<ChatScreen> {
                 Expanded(
                   child: TextField(
                     controller: _controller,
-                    decoration: InputDecoration(hintText: 'Enter your message'),
+                    decoration: const InputDecoration(hintText: 'Enter your message'),
                   ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.send),
+                  icon: const Icon(Icons.send),
                   onPressed: () async {
                     if (_controller.text.isNotEmpty) {
                       sendMessage(

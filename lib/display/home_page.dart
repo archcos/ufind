@@ -84,7 +84,7 @@ class HomePage extends StatelessWidget {
     return Scaffold(
       key: _scaffoldKey, // Assign the key to the Scaffold
       appBar: AppBar(
-        backgroundColor: Colors.transparent,  // Makes the AppBar transparent
+        backgroundColor: Colors.white,  // Makes the AppBar transparent
         elevation: 0,  // Removes the shadow of the AppBar
         leading: FutureBuilder<String>(
           future: _getUserId(),  // Fetch user ID first
@@ -202,7 +202,7 @@ class HomePage extends StatelessWidget {
                 // Drawer Header with profile image
                 DrawerHeader(
                   decoration: const BoxDecoration(
-                    color: Colors.blueAccent,
+                    color: Colors.lightBlueAccent,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -524,47 +524,14 @@ class HomePage extends StatelessWidget {
             Center(
               child: Container(
                 padding: const EdgeInsets.all(20),
-                color: Colors.blueAccent,
                 child: const Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Text(
-                      'Contact Us:',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    SizedBox(height: 10),
-                    Text(
-                      'Email: support@ufind.com',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.white,
-                      ),
-                    ),
-                    Text(
-                      'Phone: +123 456 7890',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.white,
-                      ),
-                    ),
-                    SizedBox(height: 20),
-                    Text(
-                      'Office Hours: Monday - Friday, 9:00 AM - 5:00 PM',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.white,
-                      ),
-                    ),
-                    SizedBox(height: 10),
-                    Text(
                       '© 2024 U-Find. All rights reserved.',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.white,
+                        color: Colors.black,
                       ),
                     ),
                   ],

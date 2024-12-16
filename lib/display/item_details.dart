@@ -48,7 +48,7 @@ class ItemDetailsPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(ticket.itemName),
-        backgroundColor: Colors.blueAccent,
+        backgroundColor: Colors.lightBlueAccent,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -85,7 +85,7 @@ class ItemDetailsPage extends StatelessWidget {
                         if (ticket.itemType != 'Lost')
                           Positioned.fill(
                             child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+                              filter: ImageFilter.blur(sigmaX: 15.0, sigmaY: 15.0), // Apply blur
                               child: Container(
                                 color: Colors.black.withOpacity(0.1),
                               ),
@@ -107,7 +107,6 @@ class ItemDetailsPage extends StatelessWidget {
                           builder: (context) => InitialChatPage(
                             userId: senderId,
                             receiverId: ticket.id.length > 10 ? ticket.id.substring(0, 10) : ticket.id,
-                            itemName: ticket.itemName,
                           ),
                         ),
                       );
@@ -119,7 +118,7 @@ class ItemDetailsPage extends StatelessWidget {
                   },
                   style: ElevatedButton.styleFrom(
                     foregroundColor: Colors.white,
-                    backgroundColor: Colors.blueAccent, // Text color
+                    backgroundColor: Colors.lightBlueAccent, // Text color
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10), // Increased padding
                     elevation: 5, // Shadow effect for better visibility
                     shape: RoundedRectangleBorder(

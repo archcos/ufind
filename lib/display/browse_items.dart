@@ -136,7 +136,7 @@ class _ItemsListPageState extends State<ItemsListPage> {
                                 if (ticket.itemType != 'Lost')
                                   Positioned.fill(
                                   child: BackdropFilter(
-                                    filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0), // Apply blur
+                                    filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0), // Apply blur
                                     child: Container(
                                       color: Colors.black.withOpacity(0.1), // Optional overlay for darkening
                                     ),

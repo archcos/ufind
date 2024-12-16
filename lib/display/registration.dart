@@ -97,7 +97,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
           padding: const EdgeInsets.symmetric(horizontal: 20),
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [Colors.teal, Colors.cyan],
+              colors: [Colors.lightBlueAccent, Colors.lightBlue],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
             ),
@@ -106,9 +106,11 @@ class _RegistrationPageState extends State<RegistrationPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const SizedBox(height: 80),
-              const CircleAvatar(
-                radius: 40,
-                backgroundImage: AssetImage('assets/images/logo.png'),
+              Image.asset(
+                'assets/images/logo.png',
+                width: 80, // Set the desired width
+                height: 80, // Set the desired height
+                fit: BoxFit.cover, // Adjust how the image is fitted within the widget
               ),
               const SizedBox(height: 20),
               const Text(

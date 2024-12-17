@@ -6,8 +6,9 @@ import 'package:intl/intl.dart';
 class InitialChatPage extends StatefulWidget {
   final String userId;
   final String receiverId;
+  final String itemType; // Add itemType to the widget
 
-  InitialChatPage({required this.userId, required this.receiverId});
+  InitialChatPage({required this.userId, required this.receiverId, required this.itemType});
 
   @override
   _InitialChatPageState createState() => _InitialChatPageState();
@@ -146,9 +147,9 @@ class _InitialChatPageState extends State<InitialChatPage> {
   void initState() {
     super.initState();
 
-    // Show the popup when the page loads
+    // Show the popup only if the itemType is not "Lost"
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!isPopupShown) {
+      if (!isPopupShown && widget.itemType != 'Lost') {
         showItemDetailsPopup();
       }
     });

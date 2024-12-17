@@ -32,7 +32,7 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
   LatLng? _selectedLocation;
   String _itemType = '';  // 'Lost' or 'Found'
   String _status = '';  // 'Lost' or 'Found'
-
+  bool _isLoading = false;
 
   // Image Upload Fields
   File? _selectedImage;  // Selected image file
@@ -436,22 +436,48 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: _isLoading
+          ? CircularProgressIndicator() // Show loading indicator if saving
+          : FloatingActionButton(
         onPressed: () async {
-          // Upload image to Supabase first and get the image URL
-          final imageUrl = await _uploadImageToSupabase();
-          print(imageUrl);
+          // Prevent multiple clicks by setting the loading state
+          setState(() {
+            _isLoading = true;
+          });
 
-          if (imageUrl != null) {
-            setState(() {
-              _imageUrl = imageUrl;  // Set the image URL after successful upload
-            });
-            // Proceed to save the ticket details to Firebase
-            _saveToFirebase();
-          } else {
+          try {
+            // Upload image to Supabase first and get the image URL
+            final imageUrl = await _uploadImageToSupabase();
+            print(imageUrl);
+
+            if (imageUrl != null) {
+              setState(() {
+                _imageUrl = imageUrl; // Set the image URL after successful upload
+              });
+
+              // Proceed to save the ticket details to Firebase
+              await _saveToFirebase();
+
+              // Navigate to /browse-items after successful save
+              if (context.mounted) {
+                Navigator.pushReplacementNamed(context, '/browse-items');
+              }
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Image upload failed. Please try again.')),
+              );
+            }
+          } catch (e) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Image upload failed. Please try again.')),
+              SnackBar(content: Text('An error occurred: $e')),
             );
+          } finally {
+            // Reset the loading state
+            if (mounted) {
+              setState(() {
+                _isLoading = false;
+              });
+            }
           }
         },
         child: const Icon(Icons.save),

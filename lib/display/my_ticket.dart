@@ -71,10 +71,8 @@ class MyTicketPage extends StatelessWidget {
                               child: CachedNetworkImage(
                                 imageUrl: ticket.imageUrl,
                                 fit: BoxFit.cover,
-                                placeholder: (context, url) =>
-                                const Center(child: CircularProgressIndicator()),
-                                errorWidget: (context, url, error) =>
-                                const Icon(Icons.error, color: Colors.red),
+                                placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
+                                errorWidget: (context, url, error) => const Icon(Icons.error, color: Colors.red),
                               ),
                             ),
                           ),
@@ -114,23 +112,26 @@ class MyTicketPage extends StatelessWidget {
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
-                                    IconButton(
-                                      icon: const Icon(Icons.edit, color: Colors.blue),
-                                      onPressed: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) => EditTicketPage(ticket: ticket),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.delete, color: Colors.red),
-                                      onPressed: () {
-                                        _confirmDelete(context, ticket);
-                                      },
-                                    ),
+                                    // Conditionally display the Edit and Delete buttons only if the status is not 'Completed'
+                                    if (ticket.status != 'Completed') ...[
+                                      IconButton(
+                                        icon: const Icon(Icons.edit, color: Colors.blue),
+                                        onPressed: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => EditTicketPage(ticket: ticket),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.delete, color: Colors.red),
+                                        onPressed: () {
+                                          _confirmDelete(context, ticket);
+                                        },
+                                      ),
+                                    ],
                                   ],
                                 ),
                                 // New "Mark as Completed" button below the icons
@@ -336,12 +337,31 @@ class _EditTicketPageState extends State<EditTicketPage> {
   String? _imageUrl;
   // Make this nullable to prevent LateInitializationError
   final _itemTypes = ['Found', 'Lost'];
- // Dropdown options
+
+  String? _dateTime; // Add this to hold the updated dateTime
+  TextEditingController _dateTimeController = TextEditingController();
+
+  // Dropdown options
+
+  @override
+  void initState() {
+    super.initState();
+    _dateTimeController.text = widget.ticket.dateTime; // Set the initial value
+  }
+
+  @override
+  void dispose() {
+    _dateTimeController.dispose();
+    super.dispose();
+  }
+
+
   @override
   Widget build(BuildContext context) {
     _lastSeenLocation = widget.ticket.lastSeenLocation.isNotEmpty ? widget.ticket.lastSeenLocation : null;
     _itemType = widget.ticket.itemType.isNotEmpty ? widget.ticket.itemType : 'Lost'; // Default to 'Lost' if empty
     _imageUrl = widget.ticket.imageUrl.isNotEmpty ? widget.ticket.imageUrl : null; // Set initial value for imageUrl
+    // _dateTime = widget.ticket.dateTime; // Initialize the dateTime with current ticket value
 
     return Scaffold(
       appBar: AppBar(title: const Text("Edit Ticket")),
@@ -366,11 +386,9 @@ class _EditTicketPageState extends State<EditTicketPage> {
                   onSaved: (value) => _description = value!,
                 ),
                 TextFormField(
-                    initialValue: widget.ticket.dateTime,
+                    controller: _dateTimeController, // Use the controller here
                     decoration: const InputDecoration(labelText: "Date & Time"),
-                    readOnly: true, // Make the field read-only to open date picker
-                    validator: (value) =>
-                    value!.isEmpty ? "Please select a date and time" : null,
+                    readOnly: true, // Make the field read-only to open the date picker
                     onTap: () async {
                       // Open Date Picker when tapped
                       DateTime? selectedDateTime = await showDatePicker(
@@ -395,6 +413,12 @@ class _EditTicketPageState extends State<EditTicketPage> {
                             selectedTime.hour,
                             selectedTime.minute,
                           );
+
+                          // Update the controller with the new value
+                          setState(() {
+                            _dateTimeController.text = DateFormat('yyyy-MM-dd hh:mm').format(dateTime);
+                          });
+                          print("Updated dateTime in onTap: ${_dateTimeController.text}");
                         }
                       }
                     }
@@ -492,6 +516,8 @@ class _EditTicketPageState extends State<EditTicketPage> {
   }
 
   void _updateTicket(BuildContext context) async {
+    print("DateTime before updateTicket: ${_dateTimeController.text}");  // Debugging line
+
     try {
       await FirebaseFirestore.instance
           .collection('tickets')
@@ -505,6 +531,7 @@ class _EditTicketPageState extends State<EditTicketPage> {
         'lastSeenLocation': _lastSeenLocation,
         'itemType': _itemType,
         'imageUrl': _imageUrl,
+        'dateTime': _dateTimeController.text, // Save the updated dateTime here
       });
       Navigator.of(context).pop();
     } catch (error) {

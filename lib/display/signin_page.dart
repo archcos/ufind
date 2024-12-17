@@ -109,20 +109,20 @@ class _SigninPageState extends State<SigninPage> {
           children: [
             Image.asset(
               'assets/images/logo.png',
-              width: 120, // Set the desired width
-              height: 120, // Set the desired height
+              width: 150, // Set the desired width
+              height: 150, // Set the desired height
               fit: BoxFit.cover, // Adjust how the image is fitted within the widget
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
             const Text(
-              'U-Find',
+              'U-FIND',
               style: TextStyle(
-                fontSize: 32,
+                fontSize: 30,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 20),
             TextField(
               controller: _schoolIdController,
               decoration: InputDecoration(
@@ -136,7 +136,7 @@ class _SigninPageState extends State<SigninPage> {
                 prefixIcon: const Icon(Icons.school, color: Colors.blue),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
             TextField(
               controller: _passwordController,
               obscureText: _isPasswordHidden,
@@ -180,7 +180,7 @@ class _SigninPageState extends State<SigninPage> {
                 style: TextStyle(fontSize: 16),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [

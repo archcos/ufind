@@ -14,8 +14,16 @@ class ItemsListPage extends StatefulWidget {
 class _ItemsListPageState extends State<ItemsListPage> {
   String searchQuery = "";
   bool isSearching = false;
-  String selectedFilter = "Time";  // Default sorting
+  String selectedFilter = "Time";  // Default sorting to 'Time' (Newest first)
   String typeFilter = "All";       // Default filter
+  bool isDescending = true;        // Default to descending (Newest first)
+
+  // Function to check if the item is recent (within the last `daysAgo` days)
+  bool isItemRecent(DateTime itemDate, {int daysAgo = 30}) {
+    final now = DateTime.now();
+    final daysDifference = now.difference(itemDate).inDays;
+    return daysDifference <= daysAgo; // Return true if item is within the last `daysAgo` days
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,8 +61,12 @@ class _ItemsListPageState extends State<ItemsListPage> {
               setState(() {
                 if (value == "Lost" || value == "Found" || value == "All") {
                   typeFilter = value;
+                } else if (value == "Ascending") {
+                  isDescending = false; // Set to ascending
+                } else if (value == "Descending") {
+                  isDescending = true;  // Set to descending
                 } else {
-                  selectedFilter = value;
+                  selectedFilter = value;  // Change sort criteria (e.g. by time or alphabetically)
                 }
               });
             },
@@ -65,6 +77,8 @@ class _ItemsListPageState extends State<ItemsListPage> {
               const PopupMenuItem(value: "Lost", child: Text("Show Only Lost")),
               const PopupMenuItem(value: "Found", child: Text("Show Only Found")),
               const PopupMenuItem(value: "All", child: Text("Show All")),
+              const PopupMenuItem(value: "Ascending", child: Text("Sort Ascending")),
+              const PopupMenuItem(value: "Descending", child: Text("Sort Descending")),
             ],
           ),
         ],
@@ -72,7 +86,10 @@ class _ItemsListPageState extends State<ItemsListPage> {
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('tickets')
-            .orderBy(selectedFilter == "Time" ? "dateTime" : "itemName", descending: selectedFilter == "Time")  // Dynamic sorting based on selected filter
+            .orderBy(
+          selectedFilter == "Time" ? "dateTime" : "itemName",
+          descending: selectedFilter == "Time" ? isDescending : false,  // Sort by dateTime descending for default
+        )
             .snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
@@ -85,9 +102,19 @@ class _ItemsListPageState extends State<ItemsListPage> {
           (ticket.itemName.toLowerCase().contains(searchQuery) ||
               ticket.description.toLowerCase().contains(searchQuery)) &&
               (typeFilter == "All" || ticket.itemType == typeFilter) &&
-              ticket.status != "Completed" // Exclude tickets with status 'Completed'
+              ticket.status != "Completed" && // Exclude tickets with status 'Completed'
+              isItemRecent(DateTime.parse(ticket.dateTime)) // Filter by recent date
           )
               .toList();
+
+          // If Alphabetical is selected, perform client-side sorting
+          if (selectedFilter == "Alphabetical") {
+            tickets.sort((a, b) {
+              // Compare the item names alphabetically, considering ascending/descending order
+              int comparison = a.itemName.toLowerCase().compareTo(b.itemName.toLowerCase());
+              return isDescending ? -comparison : comparison;  // Reverse if descending
+            });
+          }
 
           return GridView.builder(
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -134,15 +161,6 @@ class _ItemsListPageState extends State<ItemsListPage> {
                                   const Center(child: CircularProgressIndicator()),
                                   errorWidget: (context, url, error) =>
                                   const Icon(Icons.error, color: Colors.red),
-                                ),
-                                if (ticket.itemType != 'Lost')
-                                  Positioned.fill(
-                                  child: BackdropFilter(
-                                    filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0), // Apply blur
-                                    child: Container(
-                                      color: Colors.black.withOpacity(0.1), // Optional overlay for darkening
-                                    ),
-                                  ),
                                 ),
                               ],
                             ),
@@ -199,7 +217,6 @@ class _ItemsListPageState extends State<ItemsListPage> {
                           ),
                         ),
                       ),
-
                     ],
                   ),
                 ),

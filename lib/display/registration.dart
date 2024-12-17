@@ -105,16 +105,16 @@ class _RegistrationPageState extends State<RegistrationPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const SizedBox(height: 80),
+              const SizedBox(height: 50),
               Image.asset(
                 'assets/images/logo.png',
-                width: 80, // Set the desired width
-                height: 80, // Set the desired height
+                width: 120, // Set the desired width
+                height: 120, // Set the desired height
                 fit: BoxFit.cover, // Adjust how the image is fitted within the widget
               ),
               const SizedBox(height: 20),
               const Text(
-                'U-Find Registration',
+                'U-FIND Registration',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,

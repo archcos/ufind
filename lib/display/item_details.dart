@@ -97,7 +97,24 @@ class ItemDetailsPage extends StatelessWidget {
                 ),
               const SizedBox(height: 8),
               Center(
-                child: ElevatedButton(
+                child: ticket.id.startsWith('1234567890')
+                    ? Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.grey, // Disabled button color
+                    borderRadius: BorderRadius.circular(30), // Rounded corners
+                  ),
+                  child: const Text(
+                    'This item has been turned over to OSA, Please visit their office provided below.',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white, // Text color
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                )
+                    : ElevatedButton(
                   onPressed: () async {
                     final senderId = await _getSenderId();
                     if (senderId.isNotEmpty) {
@@ -107,6 +124,7 @@ class ItemDetailsPage extends StatelessWidget {
                           builder: (context) => InitialChatPage(
                             userId: senderId,
                             receiverId: ticket.id.length > 10 ? ticket.id.substring(0, 10) : ticket.id,
+                            itemType: ticket.itemType,
                           ),
                         ),
                       );

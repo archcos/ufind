@@ -9,7 +9,8 @@ plugins {
 }
 
 android {
-    namespace = "com.example.untitled"
+    namespace = "com.example.untitled" +
+            ""
     compileSdkVersion 35
     ndkVersion = "25.1.8937393"
 

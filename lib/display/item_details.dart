@@ -16,8 +16,6 @@ class ItemDetailsPage extends StatelessWidget {
   // Helper function to parse the location string and extract latitude and longitude
   LatLng _parseLocation(String location) {
     final coordinates = location
-        .replaceAll('(', '')
-        .replaceAll(')', '')
         .split(',');
 
     double latitude = double.tryParse(coordinates[0].trim()) ?? 0.0;
@@ -43,11 +41,11 @@ class ItemDetailsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final latLng = _parseLocation(ticket.lastSeenLocation);
+    final latLng = _parseLocation(ticket.location);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(ticket.itemName),
+        title: Text(ticket.name),
         backgroundColor: Colors.lightBlueAccent,
       ),
       body: Padding(
@@ -82,7 +80,7 @@ class ItemDetailsPage extends StatelessWidget {
                           placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
                           errorWidget: (context, url, error) => const Icon(Icons.error),
                         ),
-                        if (ticket.itemType != 'Lost')
+                        if (ticket.status != 'lost')
                           Positioned.fill(
                             child: BackdropFilter(
                               filter: ImageFilter.blur(sigmaX: 15.0, sigmaY: 15.0), // Apply blur
@@ -97,7 +95,7 @@ class ItemDetailsPage extends StatelessWidget {
                 ),
               const SizedBox(height: 8),
               Center(
-                child: ticket.id.startsWith('1234567890')
+                child: ticket.claimStatus.startsWith('turnover')
                     ? Container(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   decoration: BoxDecoration(
@@ -124,7 +122,7 @@ class ItemDetailsPage extends StatelessWidget {
                           builder: (context) => InitialChatPage(
                             userId: senderId,
                             receiverId: ticket.id.length > 10 ? ticket.id.substring(0, 10) : ticket.id,
-                            itemType: ticket.itemType,
+                            itemType: ticket.status,
                           ),
                         ),
                       );
@@ -151,16 +149,16 @@ class ItemDetailsPage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              Text('Item Name: ${ticket.itemName}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              Text('Item Name: ${ticket.name}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
               Text('Description: ${ticket.description}', style: const TextStyle(fontSize: 12)),
               Text( 'Date & Time: ${formatDateTime(ticket.dateTime)}', style: const TextStyle(fontSize: 12)),
               const SizedBox(height: 8),
               const Text('Contact Details', style: TextStyle(fontSize: 16,  fontWeight: FontWeight.bold)),
-              Text('Name: ${ticket.contactName}', style: const TextStyle(fontSize: 12)),
+              Text('Name: ${ticket.fullName}', style: const TextStyle(fontSize: 12)),
               Text('Number: ${ticket.contactNumber}', style: const TextStyle(fontSize: 12)),
               Text('Email: ${ticket.email}', style: const TextStyle(fontSize: 12)),
               const SizedBox(height: 8),
-              if (ticket.itemType == 'Lost') ...[
+              if (ticket.status == 'lost') ...[
                const Text('Last Seen Location: ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 5),
                 SizedBox(

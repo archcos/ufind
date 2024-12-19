@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart'; // Firestore
 import 'package:firebase_auth/firebase_auth.dart'; // Firebase Auth
 import 'dart:convert'; // For hashing
 import 'package:crypto/crypto.dart'; // For hashing passwords
+import 'dart:math'; // For generating salt
 import 'package:flutter/services.dart'; // For input formatters
 
 class RegistrationPage extends StatefulWidget {
@@ -34,7 +35,6 @@ class _RegistrationPageState extends State<RegistrationPage> {
       return;
     }
 
-    // Validate that schoolId is exactly 10 digits
     if (schoolId.length != 10) {
       _showMessage('School ID must be exactly 10 digits.');
       return;
@@ -60,13 +60,15 @@ class _RegistrationPageState extends State<RegistrationPage> {
         return;
       }
 
+      String salt = generateSalt();
+      String hashedPassword = hashPassword(password, salt);
+
       await FirebaseFirestore.instance.collection('users').doc(schoolId).set({
-        'first_name': firstName,
-        'last_name': lastName,
-        'school_id': schoolId,
-        'email': email,
-        'password': hashPassword(password),
-        'created_at': FieldValue.serverTimestamp(),
+        'firstName': firstName,
+        'lastName': lastName,
+        'emailAddress': email,
+        'password': hashedPassword,
+        'salt': salt,
       });
 
       _showMessage('Registration Successful! Please login now with your school ID');
@@ -80,8 +82,14 @@ class _RegistrationPageState extends State<RegistrationPage> {
     }
   }
 
-  String hashPassword(String password) {
-    final bytes = utf8.encode(password);
+  String generateSalt([int length = 30]) {
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    final rnd = Random.secure();
+    return List.generate(length, (index) => chars[rnd.nextInt(chars.length)]).join();
+  }
+
+  String hashPassword(String password, String salt) {
+    final bytes = utf8.encode(password + salt);
     return sha256.convert(bytes).toString();
   }
 
@@ -108,9 +116,9 @@ class _RegistrationPageState extends State<RegistrationPage> {
               const SizedBox(height: 50),
               Image.asset(
                 'assets/images/logo.png',
-                width: 120, // Set the desired width
-                height: 120, // Set the desired height
-                fit: BoxFit.cover, // Adjust how the image is fitted within the widget
+                width: 120,
+                height: 120,
+                fit: BoxFit.cover,
               ),
               const SizedBox(height: 20),
               const Text(
@@ -122,7 +130,6 @@ class _RegistrationPageState extends State<RegistrationPage> {
                 ),
               ),
               const SizedBox(height: 30),
-
               _buildTextField(_firstNameController, 'First Name', Icons.person),
               const SizedBox(height: 10),
               _buildTextField(_lastNameController, 'Last Name', Icons.person),
@@ -133,10 +140,9 @@ class _RegistrationPageState extends State<RegistrationPage> {
               const SizedBox(height: 10),
               _buildPasswordField(),
               const SizedBox(height: 30),
-
               AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
-                width: _isRegistering ? 60 : MediaQuery.of(context).size.width * 0.8, // Use a relative width
+                width: _isRegistering ? 60 : MediaQuery.of(context).size.width * 0.8,
                 height: 60,
                 child: ElevatedButton(
                   onPressed: _handleRegister,
@@ -152,25 +158,6 @@ class _RegistrationPageState extends State<RegistrationPage> {
                       : const Text('Register', style: TextStyle(fontSize: 16)),
                 ),
               ),
-
-              const SizedBox(height: 20),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    "Already have an account?",
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pushReplacementNamed(context, '/');
-                    },
-                    child: const Text('Login', style: TextStyle(color: Colors.white)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 100),
             ],
           ),
         ),
@@ -183,12 +170,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
       controller: controller,
       obscureText: isPassword,
       keyboardType: isNumber ? TextInputType.number : TextInputType.text,
-      inputFormatters: isNumber
-          ? [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(10),    // Limit to 10 digits
-            ]
-          : null,
+      inputFormatters: isNumber ? [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)] : null,
       decoration: InputDecoration(
         filled: true,
         fillColor: Colors.white,
@@ -216,10 +198,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
         ),
         prefixIcon: const Icon(Icons.lock, color: Colors.blue),
         suffixIcon: IconButton(
-          icon: Icon(
-            _isPasswordHidden ? Icons.visibility : Icons.visibility_off,
-            color: Colors.blue,
-          ),
+          icon: Icon(_isPasswordHidden ? Icons.visibility : Icons.visibility_off, color: Colors.blue),
           onPressed: () {
             setState(() {
               _isPasswordHidden = !_isPasswordHidden;

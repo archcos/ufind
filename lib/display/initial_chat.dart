@@ -20,34 +20,56 @@ class _InitialChatPageState extends State<InitialChatPage> {
   bool isPopupShown = false; // Ensure popup shows only once
   final ScrollController _scrollController = ScrollController();
 
+  String getChatDocumentId() {
+    // Sort the user IDs to ensure the documentId is the same for both users
+    final ids = [widget.userId, widget.receiverId];
+    ids.sort(); // Sort alphabetically or numerically
+    return ids.join("_"); // Combine IDs with an underscore
+  }
+
   Future<void> sendMessage(String senderId, String receiverId, String message) async {
     final timestamp = FieldValue.serverTimestamp();
-    final isRead = false; // Initially, the message is unread
+    final isRead = false;
 
-    // Send the message to Firestore
-    await FirebaseFirestore.instance.collection('messages').add({
-      'sender': senderId,
-      'receiver': receiverId,
+    // Firestore path: /chats1/{documentId}/messages/{messageId}
+    final documentId = getChatDocumentId();
+    final chatDocRef = FirebaseFirestore.instance.collection('chats1').doc(documentId);
+    final messagesRef = chatDocRef.collection('messages');
+
+    // Check if the chat document already exists
+    final chatDoc = await chatDocRef.get();
+
+    if (!chatDoc.exists) {
+      // Create the chat document with metadata if it doesn't exist
+      await chatDocRef.set({
+        'participants': [senderId, receiverId],
+        'lastMessage': message,
+        'lastMessageTime': timestamp,
+      });
+    } else {
+      // Update last message details if the chat already exists
+      await chatDocRef.update({
+        'lastMessage': message,
+        'lastMessageTime': timestamp,
+      });
+    }
+
+    // Add the message to the messages sub-collection
+    await messagesRef.add({
+      'senderId': senderId,
+      'receiverId': receiverId,
       'message': message,
       'timestamp': timestamp,
-      'isRead': isRead, // Set the message as unread initially
+      'isRead': isRead,
     });
   }
 
   Stream<List<Map<String, dynamic>>> getMessages(String userId, String receiverId) {
-    return FirebaseFirestore.instance
-        .collection('messages')
-        .where('sender', whereIn: [userId, receiverId])
-        .where('receiver', whereIn: [userId, receiverId])
-        .orderBy('timestamp')
-        .snapshots()
-        .map((snapshot) {
-      return snapshot.docs
-          .map((doc) => doc.data() as Map<String, dynamic>)
-          .where((message) =>
-      (message['sender'] == userId && message['receiver'] == receiverId) ||
-          (message['sender'] == receiverId && message['receiver'] == userId))
-          .toList();
+    final documentId = getChatDocumentId();
+    final chatRef = FirebaseFirestore.instance.collection('chats1').doc(documentId).collection('messages');
+
+    return chatRef.orderBy('timestamp').snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
     });
   }
 
@@ -234,6 +256,10 @@ class _InitialChatPageState extends State<InitialChatPage> {
                   return Center(child: CircularProgressIndicator());
                 }
 
+                if (snapshot.hasError) {
+                  return Center(child: Text("Error: ${snapshot.error}"));
+                }
+
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return Center(child: Text("No messages"));
                 }
@@ -250,7 +276,7 @@ class _InitialChatPageState extends State<InitialChatPage> {
                   itemCount: messages.length,
                   itemBuilder: (context, index) {
                     final message = messages[index];
-                    final isSender = message['sender'] == widget.userId;
+                    final isSender = message['senderId'] == widget.userId;
 
                     return Align(
                       alignment: isSender ? Alignment.centerRight : Alignment.centerLeft,

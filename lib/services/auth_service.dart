@@ -15,36 +15,40 @@ class AuthService {
   }
 
   // Check if the user is logged in by checking SharedPreferences
-  Future<Map<String, dynamic>> loginWithSchoolId(String schoolId,
-      String password) async {
+  Future<Map<String, dynamic>> loginWithSchoolId(String schoolId, String password) async {
     try {
-      // Fetch the user document from Firestore using the school ID as the document ID
-      DocumentSnapshot userDoc = await _firestore.collection('users').doc(
-          schoolId).get();
+      // Fetch the user document from Firestore
+      DocumentSnapshot userDoc = await _firestore.collection('users').doc(schoolId).get();
 
       if (!userDoc.exists) {
         return {'success': false, 'message': 'User not found.'};
       }
 
-      // Retrieve the email from Firestore document
-      String email = userDoc['email'];
+      // Retrieve stored salt and hashed password
+      String storedSalt = userDoc['salt'];
+      String storedHashedPassword = userDoc['password'];
 
-      // Log in the user with Firebase Authentication using the email and password
-      final userCredential = await FirebaseAuth.instance
-          .signInWithEmailAndPassword(
+      // Hash the provided password with the stored salt
+      String hashedInputPassword = _hashPasswordWithSalt(password, storedSalt);
+
+      if (hashedInputPassword != storedHashedPassword) {
+        return {'success': false, 'message': 'Invalid credentials.'};
+      }
+
+      String email = userDoc['emailAddress'];
+
+      final userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
-        password: password, // Ensure the password is correct
+        password: password, // Used for Firebase login
       );
 
       final user = userCredential.user;
       if (user != null) {
-        // Save user data locally (SharedPreferences), excluding the password
         await _saveUserDataLocally(userDoc, user.email);
-
         return {
           'success': true,
           'message': 'Login successful!',
-          'user': userDoc.data(), // Returning the user data from Firestore
+          'user': userDoc.data(),
         };
       } else {
         return {'success': false, 'message': 'Failed to log in.'};
@@ -54,11 +58,9 @@ class AuthService {
     }
   }
 
-  // Hash the password using SHA-256
-  String _hashPassword(String password) {
-    var bytes = utf8.encode(password); // Convert password to bytes
-    var digest = sha256.convert(bytes); // Perform the SHA-256 hashing
-    return digest.toString(); // Return the hashed password as a string
+  String _hashPasswordWithSalt(String password, String salt) {
+    final bytes = utf8.encode(password + salt); // Combine password and salt
+    return sha256.convert(bytes).toString(); // Hash the combination
   }
 
   // Save user data to SharedPreferences (excluding the password)
@@ -67,8 +69,8 @@ class AuthService {
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
     // Save user details (ensure that the keys match your Firestore document fields)
-    await prefs.setString('user_first_name', userDoc['first_name']);
-    await prefs.setString('user_last_name', userDoc['last_name']);
+    await prefs.setString('user_first_name', userDoc['firstName']);
+    await prefs.setString('user_last_name', userDoc['lastName']);
     await prefs.setString(
         'user_email', email ?? ''); // Save email from Firebase Authentication
     await prefs.setString(
@@ -138,21 +140,20 @@ class AuthService {
     }
   }
 
-  // Update user profile (first name, last name, school ID, and password)
-  Future<bool> updateProfile(String schoolId, String firstName, String lastName,
-      String email, String password) async {
+  Future<bool> updateProfile(String schoolId, String firstName, String lastName, String password) async {
     try {
       // Prepare user data for update
       Map<String, dynamic> updatedData = {
         'first_name': firstName,
         'last_name': lastName,
-        'user_email': email, // Optionally update school ID if required
       };
 
-      // If a new password is provided, hash it and update it
+      // If a new password is provided, generate a new salt and hash the password
       if (password.isNotEmpty) {
-        updatedData['password'] =
-            _hashPassword(password); // Hash the password before saving
+        String newSalt = _generateSalt();
+        String hashedPassword = _hashPasswordWithSalt(password, newSalt);
+        updatedData['salt'] = newSalt;
+        updatedData['password'] = hashedPassword;
       }
 
       // Update the user document in Firestore
@@ -162,25 +163,20 @@ class AuthService {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       await prefs.setString('user_first_name', firstName);
       await prefs.setString('user_last_name', lastName);
-      await prefs.setString('user_email', email); // Update email if needed
-      await prefs.setString(
-          'user_school_id', schoolId); // Update school ID in SharedPreferences
+      await prefs.setString('user_school_id', schoolId);
 
-      // Log the success to the console for debugging
       print("Profile updated successfully!");
-      return true; // Return true if update was successful
+      return true;
     } catch (e) {
-      // Print the error message to the console for debugging
       print("Error updating profile: $e");
-
-      // Show more detailed error feedback
-      if (e is FirebaseException) {
-        print("Firebase error: ${e.message}");
-      } else {
-        print("Non-Firebase error: $e");
-      }
-
-      return false; // Return false if an error occurs
+      return false;
     }
   }
+
+  String _generateSalt() {
+    final random = List<int>.generate(16, (i) => DateTime.now().microsecond % 256);
+    return base64Url.encode(random);
+  }
+
+
 }

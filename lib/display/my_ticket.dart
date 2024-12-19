@@ -30,7 +30,7 @@ class MyTicketPage extends StatelessWidget {
           String schoolId = snapshot.data!;
 
           return StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance.collection('tickets').snapshots(),
+            stream: FirebaseFirestore.instance.collection('items').snapshots(),
             builder: (context, snapshot) {
               if (!snapshot.hasData) {
                 return const Center(child: CircularProgressIndicator());
@@ -83,7 +83,7 @@ class MyTicketPage extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  ticket.itemName,
+                                  ticket.name,
                                   style: const TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
@@ -101,7 +101,7 @@ class MyTicketPage extends StatelessWidget {
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 Text(
-                                  'Item Type: ${ticket.itemType}',
+                                  'Item Type: ${ticket.status}',
                                   style: TextStyle(
                                     fontSize: 10,
                                     color: Colors.grey[700],
@@ -137,14 +137,14 @@ class MyTicketPage extends StatelessWidget {
                                 // New "Mark as Completed" button below the icons
                                 Center(
                                   child: TextButton(
-                                    onPressed: ticket.status == 'Active'
+                                    onPressed: ticket.ticket == 'pending'
                                         ? () {
                                       _showCompletionDialog(context, ticket);
                                     }
                                         : null, // Disable if the status is not 'Active'
                                     style: TextButton.styleFrom(
                                       foregroundColor: Colors.white,
-                                      backgroundColor: ticket.status == 'Active'
+                                      backgroundColor: ticket.ticket == 'pending'
                                           ? Colors.red // Red for "Mark as Completed"
                                           : Colors.green, // Green for "Completed"
                                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
@@ -153,7 +153,7 @@ class MyTicketPage extends StatelessWidget {
                                       ),
                                     ),
                                     child: Text(
-                                      ticket.status == 'Active'
+                                      ticket.ticket == 'pending'
                                           ? "Mark as Completed"
                                           : "Completed", // Show different text based on the status
                                       style: const TextStyle(fontSize: 10),
@@ -206,29 +206,59 @@ class MyTicketPage extends StatelessWidget {
   void _showClaimDialog(BuildContext context, Ticket ticket) {
     final _claimFormKey = GlobalKey<FormState>();
     String? claimerId;
+    String? description;
     String? claimerName;
+    String? yearSection;
+    String? locationLost;
     String? dateReceived = DateFormat('MMM dd, yyyy, hh:mm a').format(DateTime.now()); // Set to current date and time
 
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Claim/Find Details'),
+          title: const Text('Claim Details'),
           content: Form(
             key: _claimFormKey,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextFormField(
-                  decoration: const InputDecoration(labelText: 'Claimer/Finders ID'),
+                  decoration: const InputDecoration(labelText: 'Claimers Student ID'),
                   onSaved: (value) => claimerId = value,
-                  validator: (value) => value!.isEmpty ? 'Please enter an ID' : null,
+                  validator: (value) => value!.isEmpty ? 'Please enter ID' : null,
                 ),
                 TextFormField(
-                  decoration: const InputDecoration(labelText: 'Claimer/Finders Name'),
+                  decoration: const InputDecoration(labelText: 'Claimers Name'),
                   onSaved: (value) => claimerName = value,
-                  validator: (value) => value!.isEmpty ? 'Please enter a name' : null,
+                  validator: (value) => value!.isEmpty ? 'Please enter full name' : null,
                 ),
+                TextFormField(
+                  decoration: const InputDecoration(labelText: 'Year & Section'),
+                  onSaved: (value) => yearSection = value,
+                  validator: (value) => value!.isEmpty ? 'Please enter full name' : null,
+                ),
+                TextFormField(
+                  decoration: const InputDecoration(labelText: 'Description'),
+                  onSaved: (value) => description = value,
+                  validator: (value) => value!.isEmpty ? 'Describe your item' : null,
+                ),
+                TextFormField(
+                  decoration: const InputDecoration(labelText: 'Description'),
+                  onSaved: (value) => description = value,
+                  validator: (value) => value!.isEmpty ? 'Describe your item' : null,
+                ),
+                TextFormField(
+                  decoration: const InputDecoration(labelText: 'Location Lost'),
+                  onSaved: (value) => description = value,
+                  validator: (value) => value!.isEmpty ? 'Last location you remember' : null,
+                ),
+                TextFormField(
+                  decoration: const InputDecoration(labelText: 'Location Lost'),
+                  onSaved: (value) => locationLost = value,
+                   validator: (value) => value!.isEmpty ? 'Last location you remember' : null,
+                ),
+
+
               ],
             ),
           ),
@@ -244,7 +274,7 @@ class MyTicketPage extends StatelessWidget {
                 if (_claimFormKey.currentState!.validate()) {
                   _claimFormKey.currentState!.save();
                   // Process the claim details
-                  _updateTicketWithClaimDetails(ticket, claimerId!, claimerName!, dateReceived!);
+                  _updateTicketWithClaimDetails(ticket, claimerId!, description!, locationLost!, yearSection!, claimerName!, dateReceived!);
                   Navigator.pop(context); // Close the dialog
                 }
               },
@@ -256,16 +286,20 @@ class MyTicketPage extends StatelessWidget {
     );
   }
 
-  void _updateTicketWithClaimDetails(Ticket ticket, String claimerId, String claimerName, String dateReceived) async {
+  void _updateTicketWithClaimDetails(Ticket ticket, String claimerId, String description, String locationLost, String yearSection, String claimerName, String dateReceived) async {
     try {
-      await FirebaseFirestore.instance.collection('claims').doc(ticket.id).set({
-        'claimerId': claimerId,
-        'claimerName': claimerName,
+      await FirebaseFirestore.instance.collection('Claims').doc(ticket.id).set({
+        'studentId': claimerId,
+        'description': description,
+        'itemId': ticket.id,
+        'name': claimerName,
         'dateReceived': dateReceived,
-        'status': 'Completed',
+        'locationLost': locationLost,
+        'yearSection': yearSection,
+
       });
-      await FirebaseFirestore.instance.collection('tickets').doc(ticket.id).update({
-        'status': 'Completed',
+      await FirebaseFirestore.instance.collection('items').doc(ticket.id).update({
+        'ticket': 'success',
       });
 
     } catch (error) {
@@ -300,7 +334,7 @@ class MyTicketPage extends StatelessWidget {
 
   void _deleteTicket(String ticketId) async {
     try {
-      await FirebaseFirestore.instance.collection('tickets').doc(ticketId).delete();
+      await FirebaseFirestore.instance.collection('items').doc(ticketId).delete();
     } catch (error) {
       print("Error deleting ticket: $error");
     }
@@ -320,23 +354,25 @@ class EditTicketPage extends StatefulWidget {
 class _EditTicketPageState extends State<EditTicketPage> {
   final _formKey = GlobalKey<FormState>();
 
-  late String _itemName;
+  late String _name;
 
   late String _description;
 
-  late String _contactName;
+  late String _fullName;
 
   late String _contactNumber;
 
   late String _email;
 
-  String? _lastSeenLocation;
+  String? _location;
   // Nullable type to avoid late initialization errors
-  late String? _itemType;
+  late String? _status;
+  late String? _claimStatus;
   // Make it nullable instead of using 'late'
   String? _imageUrl;
   // Make this nullable to prevent LateInitializationError
-  final _itemTypes = ['Found', 'Lost'];
+  final _statuses = ['found', 'lost'];
+  final _claimStatuses = ['keep', 'turnover'];
 
   String? _dateTime; // Add this to hold the updated dateTime
   TextEditingController _dateTimeController = TextEditingController();
@@ -358,9 +394,10 @@ class _EditTicketPageState extends State<EditTicketPage> {
 
   @override
   Widget build(BuildContext context) {
-    _lastSeenLocation = widget.ticket.lastSeenLocation.isNotEmpty ? widget.ticket.lastSeenLocation : null;
-    _itemType = widget.ticket.itemType.isNotEmpty ? widget.ticket.itemType : 'Lost'; // Default to 'Lost' if empty
+    _location = widget.ticket.location.isNotEmpty ? widget.ticket.location : null;
+    _status = widget.ticket.status.isNotEmpty ? widget.ticket.status : 'Lost'; // Default to 'Lost' if empty
     _imageUrl = widget.ticket.imageUrl.isNotEmpty ? widget.ticket.imageUrl : null; // Set initial value for imageUrl
+
     // _dateTime = widget.ticket.dateTime; // Initialize the dateTime with current ticket value
 
     return Scaffold(
@@ -374,10 +411,10 @@ class _EditTicketPageState extends State<EditTicketPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 TextFormField(
-                  initialValue: widget.ticket.itemName,
+                  initialValue: widget.ticket.name,
                   decoration: const InputDecoration(labelText: "Item Name"),
                   validator: (value) => value!.isEmpty ? "Enter item name" : null,
-                  onSaved: (value) => _itemName = value!,
+                  onSaved: (value) => _name = value!,
                 ),
                 TextFormField(
                   initialValue: widget.ticket.description,
@@ -424,10 +461,10 @@ class _EditTicketPageState extends State<EditTicketPage> {
                     }
                 ),
                 TextFormField(
-                  initialValue: widget.ticket.contactName,
+                  initialValue: widget.ticket.fullName,
                   decoration: const InputDecoration(labelText: "Contact Name"),
                   validator: (value) => value!.isEmpty ? "Enter contact name" : null,
-                  onSaved: (value) => _contactName = value!,
+                  onSaved: (value) => _fullName = value!,
                 ),
                 TextFormField(
                   initialValue: widget.ticket.contactNumber,
@@ -460,26 +497,40 @@ class _EditTicketPageState extends State<EditTicketPage> {
                 Visibility(
                   visible: false,  // This makes it hidden
                   child: TextFormField(
-                    initialValue: widget.ticket.lastSeenLocation,
+                    initialValue: widget.ticket.location,
                     decoration: const InputDecoration(
                       labelText: "Last Seen Location",
                     ),
                     validator: (value) => value!.isEmpty ? "Enter last seen location" : null,
-                    onSaved: (value) => _lastSeenLocation = value!,  // Nullable value
+                    onSaved: (value) => _location = value!,  // Nullable value
                     enabled: false,  // This makes the field uneditable
                   ),
                 ),
                 DropdownButtonFormField<String>(
-                  value: widget.ticket.itemType.isNotEmpty ? widget.ticket.itemType : _itemTypes[0],
-                  decoration: const InputDecoration(labelText: "Item Type"),
-                  items: _itemTypes.map((itemType) {
+                  value: widget.ticket.status.isNotEmpty ? widget.ticket.status : _statuses[0],
+                  decoration: const InputDecoration(labelText: "Status"),
+                  items: _statuses.map((status) {
                     return DropdownMenuItem<String>(
-                      value: itemType,
-                      child: Text(itemType),
+                      value: status,
+                      child: Text(status),
                     );
                   }).toList(),
                   onChanged: (value) {
-                    _itemType = value!;
+                    _status = value!;
+                  },
+                  validator: (value) => value == null ? "Select Item Status" : null,
+                ),
+                DropdownButtonFormField<String>(
+                  value: widget.ticket.claimStatus.isNotEmpty ? widget.ticket.claimStatus : _claimStatuses[0],
+                  decoration: const InputDecoration(labelText: "Keep/Turnover"),
+                  items: _claimStatuses.map((claimStatus) {
+                    return DropdownMenuItem<String>(
+                      value: claimStatus,
+                      child: Text(claimStatus),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    _claimStatus = value!;
                   },
                   validator: (value) => value == null ? "Select item type" : null,
                 ),
@@ -520,17 +571,18 @@ class _EditTicketPageState extends State<EditTicketPage> {
 
     try {
       await FirebaseFirestore.instance
-          .collection('tickets')
+          .collection('items')
           .doc(widget.ticket.id)
           .update({
-        'itemName': _itemName,
+        'name': _name,
         'description': _description,
-        'contactName': _contactName,
+        'fullName': _fullName,
         'contactNumber': _contactNumber,
         'email': _email,
-        'lastSeenLocation': _lastSeenLocation,
-        'itemType': _itemType,
+        'location': _location,
+        'status': _status,
         'imageUrl': _imageUrl,
+        'claimStatus': _claimStatus,
         'dateTime': _dateTimeController.text, // Save the updated dateTime here
       });
       Navigator.of(context).pop();

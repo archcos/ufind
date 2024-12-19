@@ -59,7 +59,7 @@ class _ItemsListPageState extends State<ItemsListPage> {
             icon: const Icon(Icons.filter_list),
             onSelected: (value) {
               setState(() {
-                if (value == "Lost" || value == "Found" || value == "All") {
+                if (value == "lost" || value == "found" || value == "All") {
                   typeFilter = value;
                 } else if (value == "Ascending") {
                   isDescending = false; // Set to ascending
@@ -74,8 +74,8 @@ class _ItemsListPageState extends State<ItemsListPage> {
               const PopupMenuItem(value: "Time", child: Text("Sort by Time")),
               const PopupMenuItem(value: "Alphabetical", child: Text("Sort Alphabetically")),
               const PopupMenuDivider(),
-              const PopupMenuItem(value: "Lost", child: Text("Show Only Lost")),
-              const PopupMenuItem(value: "Found", child: Text("Show Only Found")),
+              const PopupMenuItem(value: "lost", child: Text("Show Only Lost")),
+              const PopupMenuItem(value: "found", child: Text("Show Only Found")),
               const PopupMenuItem(value: "All", child: Text("Show All")),
               const PopupMenuItem(value: "Ascending", child: Text("Sort Ascending")),
               const PopupMenuItem(value: "Descending", child: Text("Sort Descending")),
@@ -85,7 +85,7 @@ class _ItemsListPageState extends State<ItemsListPage> {
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
-            .collection('tickets')
+            .collection('items')
             .orderBy(
           selectedFilter == "Time" ? "dateTime" : "itemName",
           descending: selectedFilter == "Time" ? isDescending : false,  // Sort by dateTime descending for default
@@ -99,9 +99,9 @@ class _ItemsListPageState extends State<ItemsListPage> {
           final tickets = snapshot.data!.docs
               .map((doc) => Ticket.fromDocument(doc))
               .where((ticket) =>
-          (ticket.itemName.toLowerCase().contains(searchQuery) ||
+          (ticket.name.toLowerCase().contains(searchQuery) ||
               ticket.description.toLowerCase().contains(searchQuery)) &&
-              (typeFilter == "All" || ticket.itemType == typeFilter) &&
+              (typeFilter == "All" || ticket.status == typeFilter) &&
               ticket.status != "Completed" && // Exclude tickets with status 'Completed'
               isItemRecent(DateTime.parse(ticket.dateTime)) // Filter by recent date
           )
@@ -111,7 +111,7 @@ class _ItemsListPageState extends State<ItemsListPage> {
           if (selectedFilter == "Alphabetical") {
             tickets.sort((a, b) {
               // Compare the item names alphabetically, considering ascending/descending order
-              int comparison = a.itemName.toLowerCase().compareTo(b.itemName.toLowerCase());
+              int comparison = a.name.toLowerCase().compareTo(b.name.toLowerCase());
               return isDescending ? -comparison : comparison;  // Reverse if descending
             });
           }
@@ -162,6 +162,18 @@ class _ItemsListPageState extends State<ItemsListPage> {
                                   errorWidget: (context, url, error) =>
                                   const Icon(Icons.error, color: Colors.red),
                                 ),
+                                if (ticket.status != 'lost')
+                                  Positioned.fill(
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(8), // Match the container's border radius
+                                      child: BackdropFilter(
+                                        filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0), // Apply blur
+                                        child: Container(
+                                          color: Colors.black.withOpacity(0.7),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
                               ],
                             ),
                           ),
@@ -174,7 +186,7 @@ class _ItemsListPageState extends State<ItemsListPage> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                ticket.itemName,
+                                ticket.name,
                                 style: const TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.bold,
@@ -183,10 +195,10 @@ class _ItemsListPageState extends State<ItemsListPage> {
                                 overflow: TextOverflow.ellipsis,
                               ),
                               Text(
-                                ticket.itemType,
+                                ticket.status,
                                 style: TextStyle(
                                   fontSize: 10,
-                                  color: ticket.itemType == 'Found' ? Colors.green : Colors.red, // Conditional color based on itemType
+                                  color: ticket.status == 'found' ? Colors.green : Colors.red,
                                   fontWeight: FontWeight.bold,
                                 ),
                                 maxLines: 1,
@@ -203,7 +215,7 @@ class _ItemsListPageState extends State<ItemsListPage> {
                                 overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 2),
-                              Spacer(), // This will push the following widget to the bottom
+                              const Spacer(), // This will push the following widget to the bottom
                               Text(
                                 DateFormat('MM-dd-yy h:mm a').format(DateTime.parse(ticket.dateTime)),
                                 style: TextStyle(

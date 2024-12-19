@@ -33,6 +33,7 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
   String _itemType = '';  // 'Lost' or 'Found'
   String _status = '';  // 'Lost' or 'Found'
   bool _isLoading = false;
+  String _claimStatus = '';
 
   // Image Upload Fields
   File? _selectedImage;  // Selected image file
@@ -77,7 +78,7 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
               title: const Text('Lost'),
               onTap: () async {
                 setState(() {
-                  _itemType = 'Lost';
+                  _itemType = 'lost';
                 });
                 Navigator.pop(context); // Close the item type dialog
               },
@@ -86,7 +87,7 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
               title: const Text('Found'),
               onTap: () async {
                 setState(() {
-                  _itemType = 'Found';
+                  _itemType = 'found';
                 });
                 Navigator.pop(context); // Close the item type dialog
                 await _showOwnershipDialog(); // Show the ownership dialog
@@ -251,30 +252,29 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
 
     // Check if all fields are filled out correctly (same as your existing code)
 
-    // Generate document ID based on the user's choice
-    String documentId;
+    String uniqueId = _generateRandomId();
+    String documentId = '${schoolId}_$uniqueId'; // Use schoolId + unique ID for "Keep"
+
     if (_status == 'TurnOver') {
-      String uniqueId = _generateRandomId();
-      documentId = '1234567890_$uniqueId'; // Fixed ID for "Turn Over"
-      schoolId = '1234567890';
+      _claimStatus = 'turnover';
     } else {
-      String uniqueId = _generateRandomId();
-      documentId = '${schoolId}_$uniqueId'; // Use schoolId + unique ID for "Keep"
+      _claimStatus = 'keep';
     }
 
     // Save the ticket details to Firestore (same as your existing code)
-    await FirebaseFirestore.instance.collection('tickets').doc(documentId).set({
-      'itemType': _itemType,
-      'itemName': _itemNameController.text,
+    await FirebaseFirestore.instance.collection('items').doc(documentId).set({
+      'status': _itemType,
+      'name': _itemNameController.text,
       'description': _descriptionController.text,
       'dateTime': _dateTimeController.text,
-      'contactName': _contactNameController.text,
+      'fullName': _contactNameController.text,
       'contactNumber': _contactNumberController.text,
       'email': _emailController.text,
-      'lastSeenLocation': _lastSeenLocation,
-      'schoolId': schoolId,
-      'status': 'Active',
+      'location': _lastSeenLocation,
+      'studentId': schoolId,
+      'ticket': 'pending',
       'imageUrl': _imageUrl,
+      'claimStatus': _claimStatus,
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -308,7 +308,7 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
         TimeOfDay.fromDateTime(initialDate);
 
     setState(() {
-      _dateTimeController.text = DateFormat('yyyy-MM-dd HH:mm').format(
+      _dateTimeController.text = DateFormat('yyyy-MM-ddTHH:mm').format(
         DateTime(pickedDate.year, pickedDate.month, pickedDate.day,
             pickedTime.hour, pickedTime.minute),
       );
@@ -340,7 +340,7 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
     if (result != null && result is LatLng) {
       setState(() {
         _selectedLocation = result;
-        _lastSeenLocation = '(${result.latitude}, ${result.longitude})';
+        _lastSeenLocation = '${result.latitude}, ${result.longitude}';
       });
     }
   }

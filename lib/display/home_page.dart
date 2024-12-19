@@ -346,8 +346,8 @@ class HomePage extends StatelessWidget {
             ),
             StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
-                  .collection('tickets')
-                  .where('status', isEqualTo: 'Active')
+                  .collection('items')
+                  .where('ticket', isNotEqualTo: 'Completed')
                   .orderBy('dateTime', descending: true) // Order by 'dateTime'
                   .limit(6)
                   .snapshots(),
@@ -366,9 +366,9 @@ class HomePage extends StatelessWidget {
 
                 final tickets = snapshot.data!.docs.map((doc) {
                   return {
-                    'itemName': doc['itemName'] ?? '',
+                    'name': doc['name'] ?? '',
                     'imageUrl': doc['imageUrl'] ?? '',
-                    'itemType': doc['itemType'] ?? 'Found',  // Fetching itemType
+                    'status': doc['status'] ?? 'found',  // Fetching itemType
                   };
                 }).toList();
 
@@ -398,7 +398,7 @@ class HomePage extends StatelessWidget {
                     itemCount: tickets.length,
                     itemBuilder: (context, index) {
                       final ticket = tickets[index];
-                      final isLostItem = ticket['itemType'] == 'Lost';  // Check if itemType is 'Lost'
+                      final isLostItem = ticket['status'] == 'lost';  // Check if itemType is 'Lost'
 
                       return Card(
                         elevation: 4,
@@ -441,7 +441,7 @@ class HomePage extends StatelessWidget {
                                 text: TextSpan(
                                   children: [
                                     TextSpan(
-                                      text: '${ticket['itemName']} \n', // Keep itemName black
+                                      text: '${ticket['name']} \n', // Keep itemName black
                                       style: const TextStyle(
                                         fontSize: 8,
                                         fontWeight: FontWeight.bold,
@@ -449,11 +449,11 @@ class HomePage extends StatelessWidget {
                                       ),
                                     ),
                                     TextSpan(
-                                      text: ticket['itemType'], // Display itemType in dynamic color
+                                      text: ticket['status'], // Display itemType in dynamic color
                                       style: TextStyle(
                                         fontSize: 8,
                                         fontWeight: FontWeight.bold,
-                                        color: ticket['itemType'] == 'Found' ? Colors.green : Colors.red, // Green if Found, Red otherwise
+                                        color: ticket['status'] == 'found' ? Colors.green : Colors.red, // Green if Found, Red otherwise
                                       ),
                                     ),
                                   ],

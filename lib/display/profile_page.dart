@@ -28,7 +28,7 @@ class _ProfilePageState extends State<ProfilePage> {
     final prefs = await SharedPreferences.getInstance();
     final firstName = prefs.getString('user_first_name');
     final lastName = prefs.getString('user_last_name');
-    final email = prefs.getString('user_email');
+    // final email = prefs.getString('user_email');
     final schoolId = prefs.getString('user_school_id'); // school_id is stored as String
 
     if (schoolId == null) {
@@ -55,7 +55,6 @@ class _ProfilePageState extends State<ProfilePage> {
         userId!,  // Pass userId (schoolId) as String
         _firstNameController.text,
         _lastNameController.text,
-        _schoolIdController.text,
         _passwordController.text, // Pass the password for update
       );
 
@@ -68,7 +67,6 @@ class _ProfilePageState extends State<ProfilePage> {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('user_first_name', _firstNameController.text);
         await prefs.setString('user_last_name', _lastNameController.text);
-        await prefs.setString('user_email', _schoolIdController.text); // Update email if needed
 
       } else {
         ScaffoldMessenger.of(context).showSnackBar(

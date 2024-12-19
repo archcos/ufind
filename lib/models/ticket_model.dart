@@ -2,46 +2,53 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Ticket {
   final String id; // Added ID field
-  final String itemName;
+  final String name;
   final String description;
   final String dateTime;
-  final String contactName;
+  final String fullName;
   final String contactNumber;
   final String email;
-  final String lastSeenLocation;
+  final String location;
   final String imageUrl;
-  final String itemType;
   final String status;
+  final String studentId;
+  final String ticket;
+  final String claimStatus;
+
+
 
 
   Ticket({
     required this.id, // Include ID in constructor
-    required this.itemName,
+    required this.name,
     required this.description,
     required this.dateTime,
-    required this.contactName,
+    required this.fullName,
     required this.contactNumber,
     required this.email,
-    required this.lastSeenLocation,
+    required this.location,
     required this.imageUrl,
-    required this.itemType,
-    required this.status
+    required this.status,
+    required this.ticket,
+    required this.studentId,
+    required this.claimStatus
   });
 
   factory Ticket.fromDocument(DocumentSnapshot doc) {
     return Ticket(
       id: doc.id, // Assign document ID
-      itemName: doc['itemName'] ?? '',
+      name: doc['name'] ?? '',
       description: doc['description'] ?? '',
       dateTime: doc['dateTime'] ?? '',
-      contactName: doc['contactName'] ?? '',
+      fullName: doc['fullName'] ?? '',
       contactNumber: doc['contactNumber'] ?? '',
       email: doc['email'] ?? '',
-      lastSeenLocation: doc['lastSeenLocation'] ?? '',
+      location: doc['location'] ?? '',
       imageUrl: doc['imageUrl'] ?? '',
-      itemType: doc['itemType'] ?? '',
-      status: doc['status'] ?? ''
-
+      status: doc['status'] ?? '',
+      ticket: doc['ticket'] ?? '',
+      studentId: doc['studentId'] ?? '',
+      claimStatus: doc['claimStatus'] ?? ''
     );
   }
 }

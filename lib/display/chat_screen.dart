@@ -1,7 +1,7 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter/gestures.dart';
 
 class ChatScreen extends StatefulWidget {
   final String userId;
@@ -18,259 +18,240 @@ class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
   String? receiverName;
 
-  Future<String> _getUserFullName(String userId) async {
-    DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
-
-    // Get first_name and last_name from Firestore
-    String firstName = userDoc['first_name'] ?? ''; // Default to empty string if not available
-    String lastName = userDoc['last_name'] ?? '';   // Default to empty string if not available
-
-    // Combine first_name and last_name
-    return '$firstName $lastName';
+  @override
+  void initState() {
+    super.initState();
+    _fetchReceiverName();
+    _markMessagesAsRead();  // Mark messages as read when the screen is opened
   }
-
 
   Future<void> _fetchReceiverName() async {
-    String name = await _getUserFullName(widget.receiverId);
+    DocumentSnapshot userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(widget.receiverId)
+        .get();
     setState(() {
-      receiverName = name;
+      receiverName =
+      "${userDoc['firstName']} ${userDoc['lastName']}";
     });
   }
-  final isRead = false; // Initially, the message is unread
 
+  Future<void> sendMessage(String message) async {
+    if (message.isEmpty) return;
 
-  Future<void> sendMessage(
-      String senderId, String receiverId, String message, String itemName) async {
-    final timestamp = FieldValue.serverTimestamp();
-    await FirebaseFirestore.instance.collection('messages').add({
-      'sender': senderId,
-      'receiver': receiverId,
-      'message': message,
-      'timestamp': timestamp,
-      'isRead': isRead, // Set the message as unread initially
-      'itemName': itemName,
+    await FirebaseFirestore.instance
+        .collection('chats1')
+        .doc(_getChatId())
+        .collection('messages')
+        .add({
+      'senderId': widget.userId,
+      'recipientId': widget.receiverId,
+      'content': message,
+      'timestamp': FieldValue.serverTimestamp(),
+      'isRead': false,  // New messages are initially unread
     });
 
-    Future<void> markMessagesAsRead(String senderId, String receiverId) async {
-      var query = FirebaseFirestore.instance
-          .collection('messages')
-          .where('sender', isEqualTo: senderId)
-          .where('receiver', isEqualTo: receiverId)
-          .where('isRead', isEqualTo: false);
-
-      var snapshot = await query.get();
-
-      for (var doc in snapshot.docs) {
-        await doc.reference.update({
-          'isRead': true,
-        });
-      }
-    }
-
-
-    // Scroll to the bottom after sending a message
+    _controller.clear();
     _scrollToBottom();
   }
 
-  Stream<List<Map<String, dynamic>>> getMessages(
-      String userId, String receiverId) {
-    return FirebaseFirestore.instance
-        .collection('messages')
-        .where('sender', whereIn: [userId, receiverId])
-        .where('receiver', whereIn: [userId, receiverId])
-        .orderBy('timestamp') // Ensure messages are ordered by timestamp
-        .snapshots()
-        .map((snapshot) {
-      return snapshot.docs
-          .map((doc) => doc.data() as Map<String, dynamic>)
-          .where((message) =>
-      (message['sender'] == userId && message['receiver'] == receiverId) ||
-          (message['sender'] == receiverId && message['receiver'] == userId))
-          .toList();
-    });
+  String _getChatId() {
+    final ids = [widget.userId, widget.receiverId];
+    ids.sort();
+    return ids.join('_');
   }
 
-  String formatTimestamp(Timestamp? timestamp) {
-    if (timestamp == null) return 'Pending...';
-    final dateTime = timestamp.toDate();
-    return DateFormat('MM-dd-yyyy hh:mm a').format(dateTime);
+  Stream<QuerySnapshot> getMessages() {
+    return FirebaseFirestore.instance
+        .collection('chats1')
+        .doc(_getChatId())
+        .collection('messages')
+        .orderBy('timestamp')
+        .snapshots();
   }
 
   void _scrollToBottom() {
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
         _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
+        duration: const Duration(milliseconds: 50),
         curve: Curves.easeOut,
       );
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _fetchReceiverName();
+  String formatTimestamp(Timestamp? timestamp) {
+    if (timestamp == null) return "Pending...";
+    final dateTime = timestamp.toDate();
+    return DateFormat('MM-dd hh:mm a').format(dateTime);
+  }
+
+  // Mark all unread messages as read when the chat screen is opened
+  Future<void> _markMessagesAsRead() async {
+    final messagesSnapshot = await FirebaseFirestore.instance
+        .collection('chats1')
+        .doc(_getChatId())
+        .collection('messages')
+        .where('recipientId', isEqualTo: widget.userId)
+        .where('isRead', isEqualTo: false)
+        .get();
+
+    for (var messageDoc in messagesSnapshot.docs) {
+      await messageDoc.reference.update({'isRead': true});
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(receiverName ?? 'Chat'),
+        title: Text(receiverName ?? "Chat"),
+        backgroundColor: Colors.deepPurpleAccent,
       ),
       body: Column(
         children: [
+          // Status Card
           Card(
-            margin: const EdgeInsets.symmetric(horizontal: 5, vertical: 10),
+            margin: const EdgeInsets.all(10),
             elevation: 5,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(15),
             ),
-            color: Colors.blue[50], // Light blue background for the card
+            color: Colors.blue[50],
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Icon for the reminder
                   Icon(
                     Icons.warning_amber_outlined,
                     color: Colors.orange[700],
                     size: 20,
                   ),
-                  const SizedBox(width: 10), // Add space between icon and text
+                  const SizedBox(width: 10),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Reminder:",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                            color: Colors.orange[700],
+                    child: RichText(
+                      text: TextSpan(
+                        style: const TextStyle(fontSize: 14, color: Colors.black87),
+                        children: [
+                          const TextSpan(
+                            text: "Please update the Status of your ticket once you claim/give an item. ",
                           ),
-                        ),
-                        RichText(
-                          textAlign: TextAlign.justify,
-                          text: TextSpan(
-                            style: const TextStyle(fontSize: 12, color: Colors.black87), // Default text style
-                            children: [
-                              const TextSpan(
-                                text: "Please update the Status of your ticket once you claim/give an item. ",
-                              ),
-                              TextSpan(
-                                text: "Click Here",
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.blue, // Blue color to indicate it's a link
-                                  decoration: TextDecoration.underline, // Underline to look like a link
-                                ),
-                                recognizer: TapGestureRecognizer()
-                                  ..onTap = () {
-                                    // Navigate to '/my-tickets' route when tapped
-                                    Navigator.pushNamed(context, '/my-tickets');
-                                  },
-                              ),
-                            ],
+                          TextSpan(
+                            text: "Click Here",
+                            style: const TextStyle(
+                              color: Colors.blue,
+                              decoration: TextDecoration.underline,
+                            ),
+                            recognizer: TapGestureRecognizer()
+                              ..onTap = () {
+                                Navigator.pushNamed(context, '/my-tickets');
+                              },
                           ),
-                        )
-
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
           ),
+
+          // Chat messages display area
           Expanded(
-            child: StreamBuilder<List<Map<String, dynamic>>>(
-              stream: getMessages(widget.userId, widget.receiverId),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
+            child: SingleChildScrollView(
+              reverse: true,  // Ensure scrolling starts from the bottom
+              controller: _scrollController,
+              child: StreamBuilder<QuerySnapshot>(
+                stream: getMessages(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
 
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(child: Text("No messages"));
-                }
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return const Center(child: Text("No messages yet"));
+                  }
 
-                final messages = snapshot.data!;
+                  final messages = snapshot.data!.docs;
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    _scrollToBottom();
+                  });
 
-                // Use `WidgetsBinding` to ensure scrolling happens after the frame renders
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  _scrollToBottom();
-                });
+                  return ListView.builder(
+                    controller: _scrollController,
+                    shrinkWrap: true,  // Allows ListView to fit inside SingleChildScrollView
+                    itemCount: messages.length,
+                    itemBuilder: (context, index) {
+                      final message = messages[index];
+                      final isSender = message['senderId'] == widget.userId;
 
-                return ListView.builder(
-                  controller: _scrollController,
-                  itemCount: messages.length,
-                  itemBuilder: (context, index) {
-                    final message = messages[index];
-                    final isSender = message['sender'] == widget.userId;
-
-                    return Align(
-                      alignment:
-                      isSender ? Alignment.centerRight : Alignment.centerLeft,
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(
-                            vertical: 5, horizontal: 10),
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: isSender ? Colors.blue : Colors.grey[300],
-                          borderRadius: BorderRadius.circular(10),
+                      return Align(
+                        alignment: isSender ? Alignment.centerRight : Alignment.centerLeft,
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: isSender ? Colors.blue[600] : Colors.grey[300],
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                offset: Offset(0, 4),
+                                blurRadius: 8,
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: isSender
+                                ? CrossAxisAlignment.end
+                                : CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                message['content'],
+                                style: TextStyle(
+                                    color: isSender ? Colors.white : Colors.black),
+                              ),
+                              const SizedBox(height: 5),
+                              Text(
+                                formatTimestamp(message['timestamp'] as Timestamp?),
+                                style: const TextStyle(
+                                    fontSize: 10, color: Colors.black54),
+                              ),
+                            ],
+                          ),
                         ),
-                        child: Column(
-                          crossAxisAlignment: isSender
-                              ? CrossAxisAlignment.end
-                              : CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              message['message'],
-                              style: TextStyle(
-                                  color: isSender ? Colors.white : Colors.black),
-                            ),
-                            const SizedBox(height: 5),
-                            Text(
-                              message['timestamp'] != null
-                                  ? formatTimestamp(
-                                  message['timestamp'] as Timestamp?)
-                                  : 'Pending...',
-                              style:
-                              const TextStyle(fontSize: 8, color: Colors.black54),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                );
-              },
+                      );
+                    },
+                  );
+                },
+              ),
             ),
           ),
+
+          // Message input area
           Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.all(16.0),
             child: Row(
               children: [
                 Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    decoration: const InputDecoration(hintText: 'Enter your message'),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                    child: TextField(
+                      controller: _controller,
+                      decoration: const InputDecoration(
+                        hintText: 'Enter your message...',
+                        border: InputBorder.none,
+                      ),
+                    ),
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.send),
-                  onPressed: () async {
-                    if (_controller.text.isNotEmpty) {
-                      sendMessage(
-                        widget.userId,
-                        widget.receiverId,
-                        _controller.text,
-                        '', // Pass the item name
-                      );
-                      _controller.clear();
-                    }
-                  },
+                  icon: const Icon(Icons.send, color: Colors.deepPurpleAccent),
+                  onPressed: () => sendMessage(_controller.text),
                 ),
               ],
             ),

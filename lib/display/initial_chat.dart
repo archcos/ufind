@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 class InitialChatPage extends StatefulWidget {
   final String userId;
   final String receiverId;
-  final String itemType; // Add itemType to the widget
+  final String itemType;
 
   InitialChatPage({required this.userId, required this.receiverId, required this.itemType});
 
@@ -16,67 +16,58 @@ class InitialChatPage extends StatefulWidget {
 
 class _InitialChatPageState extends State<InitialChatPage> {
   final TextEditingController _controller = TextEditingController();
-  bool isFirstMessage = true; // Flag to track if it's the first message
-  bool isPopupShown = false; // Ensure popup shows only once
+  bool isFirstMessage = true;
+  bool isPopupShown = false;
   final ScrollController _scrollController = ScrollController();
 
   String getChatDocumentId() {
-    // Sort the user IDs to ensure the documentId is the same for both users
     final ids = [widget.userId, widget.receiverId];
-    ids.sort(); // Sort alphabetically or numerically
-    return ids.join("_"); // Combine IDs with an underscore
+    ids.sort();
+    return ids.join("_");
   }
 
-  Future<void> sendMessage(String senderId, String receiverId, String message) async {
+  Future<void> sendMessage(String senderId, String receiverId,
+      String message) async {
     final timestamp = FieldValue.serverTimestamp();
     final isRead = false;
 
-    // Firestore path: /chats1/{documentId}/messages/{messageId}
     final documentId = getChatDocumentId();
-    final chatDocRef = FirebaseFirestore.instance.collection('chats1').doc(documentId);
+    final chatDocRef = FirebaseFirestore.instance.collection('chats1').doc(
+        documentId);
     final messagesRef = chatDocRef.collection('messages');
 
-    // Check if the chat document already exists
     final chatDoc = await chatDocRef.get();
 
     if (!chatDoc.exists) {
-      // Create the chat document with metadata if it doesn't exist
       await chatDocRef.set({
         'participants': [senderId, receiverId],
-        'lastMessage': message,
-        'lastMessageTime': timestamp,
-      });
-    } else {
-      // Update last message details if the chat already exists
-      await chatDocRef.update({
-        'lastMessage': message,
-        'lastMessageTime': timestamp,
       });
     }
 
-    // Add the message to the messages sub-collection
     await messagesRef.add({
       'senderId': senderId,
-      'receiverId': receiverId,
-      'message': message,
+      'recipientId': receiverId,
+      'content': message,
       'timestamp': timestamp,
       'isRead': isRead,
     });
   }
 
-  Stream<List<Map<String, dynamic>>> getMessages(String userId, String receiverId) {
+  Stream<List<Map<String, dynamic>>> getMessages(String userId,
+      String receiverId) {
     final documentId = getChatDocumentId();
-    final chatRef = FirebaseFirestore.instance.collection('chats1').doc(documentId).collection('messages');
-
+    final chatRef = FirebaseFirestore.instance.collection('chats1').doc(
+        documentId).collection('messages');
     return chatRef.orderBy('timestamp').snapshots().map((snapshot) {
-      return snapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
+      return snapshot.docs.map((doc) => doc.data() as Map<String, dynamic>)
+          .toList();
     });
   }
 
   String formatTimestamp(Timestamp? timestamp) {
     if (timestamp == null) return 'Pending...';
     final dateTime = timestamp.toDate();
-    return DateFormat('MM-dd-yyyy hh:mm a').format(dateTime); // Example: "2024-12-13 02:45 PM"
+    return DateFormat('MM-dd-yyyy hh:mm a').format(dateTime);
   }
 
   void _scrollToBottom() {
@@ -120,7 +111,8 @@ class _InitialChatPageState extends State<InitialChatPage> {
                     lastDate: DateTime(2100),
                   );
                   if (selectedDate != null) {
-                    timeController.text = DateFormat('yyyy-MM-dd').format(selectedDate);
+                    timeController.text =
+                        DateFormat('yyyy-MM-dd').format(selectedDate);
                   }
                 },
               ),
@@ -129,7 +121,8 @@ class _InitialChatPageState extends State<InitialChatPage> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog without doing anything
+                Navigator.of(context)
+                    .pop(); // Close the dialog without doing anything
               },
               child: Text('Cancel'),
             ),
@@ -139,7 +132,6 @@ class _InitialChatPageState extends State<InitialChatPage> {
                 final time = timeController.text.trim();
 
                 if (description.isNotEmpty && time.isNotEmpty) {
-                  // Send the item details as the first message
                   await sendMessage(
                     widget.userId,
                     widget.receiverId,
@@ -147,10 +139,10 @@ class _InitialChatPageState extends State<InitialChatPage> {
                   );
 
                   setState(() {
-                    isPopupShown = true; // Prevent the popup from showing again
+                    isPopupShown = true;
                   });
 
-                  Navigator.of(context).pop(); // Close the dialog
+                  Navigator.of(context).pop();
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('Please fill in all fields')),
@@ -169,7 +161,6 @@ class _InitialChatPageState extends State<InitialChatPage> {
   void initState() {
     super.initState();
 
-    // Show the popup only if the itemType is not "Lost"
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!isPopupShown && widget.itemType != 'Lost') {
         showItemDetailsPopup();
@@ -181,29 +172,31 @@ class _InitialChatPageState extends State<InitialChatPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Chat"), // Use the itemName as the title in the app bar
+        title: Text("Chat"),
+        backgroundColor: Colors.blueAccent,
+        elevation: 4,
       ),
       body: Column(
         children: [
+          // Reminder Card
           Card(
             margin: const EdgeInsets.symmetric(horizontal: 5, vertical: 10),
             elevation: 5,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(15),
             ),
-            color: Colors.blue[50], // Light blue background for the card
+            color: Colors.blue[50],
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Icon for the reminder
                   Icon(
                     Icons.warning_amber_outlined,
                     color: Colors.orange[700],
                     size: 20,
                   ),
-                  const SizedBox(width: 10), // Add space between icon and text
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -219,7 +212,8 @@ class _InitialChatPageState extends State<InitialChatPage> {
                         RichText(
                           textAlign: TextAlign.justify,
                           text: TextSpan(
-                            style: const TextStyle(fontSize: 12, color: Colors.black87), // Default text style
+                            style: const TextStyle(
+                                fontSize: 12, color: Colors.black87),
                             children: [
                               const TextSpan(
                                 text: "Please update the Status of your ticket once you claim/give an item. ",
@@ -228,19 +222,17 @@ class _InitialChatPageState extends State<InitialChatPage> {
                                 text: "Click Here",
                                 style: const TextStyle(
                                   fontSize: 12,
-                                  color: Colors.blue, // Blue color to indicate it's a link
-                                  decoration: TextDecoration.underline, // Underline to look like a link
+                                  color: Colors.blue,
+                                  decoration: TextDecoration.underline,
                                 ),
                                 recognizer: TapGestureRecognizer()
                                   ..onTap = () {
-                                    // Navigate to '/my-tickets' route when tapped
                                     Navigator.pushNamed(context, '/my-tickets');
                                   },
                               ),
                             ],
                           ),
-                        )
-
+                        ),
                       ],
                     ),
                   ),
@@ -248,66 +240,86 @@ class _InitialChatPageState extends State<InitialChatPage> {
               ),
             ),
           ),
+          // Expanded Chat Window
           Expanded(
-            child: StreamBuilder<List<Map<String, dynamic>>>(
-              stream: getMessages(widget.userId, widget.receiverId),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
-                }
+            child: SingleChildScrollView(
+              reverse: true, // This ensures that the list scrolls to the bottom
+              controller: _scrollController,
+              child: Column(
+                children: [
+                  StreamBuilder<List<Map<String, dynamic>>>(
+                    stream: getMessages(widget.userId, widget.receiverId),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Center(child: CircularProgressIndicator());
+                      }
 
-                if (snapshot.hasError) {
-                  return Center(child: Text("Error: ${snapshot.error}"));
-                }
+                      if (snapshot.hasError) {
+                        return Center(child: Text("Error: ${snapshot.error}"));
+                      }
 
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return Center(child: Text("No messages"));
-                }
+                      if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                        return Center(child: Text("No messages"));
+                      }
 
-                final messages = snapshot.data!;
+                      final messages = snapshot.data!;
 
-                // Scroll to the bottom whenever new messages are loaded
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  _scrollToBottom();
-                });
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        _scrollToBottom();
+                      });
 
-                return ListView.builder(
-                  controller: _scrollController,
-                  itemCount: messages.length,
-                  itemBuilder: (context, index) {
-                    final message = messages[index];
-                    final isSender = message['senderId'] == widget.userId;
+                      return ListView.builder(
+                        controller: _scrollController,
+                        shrinkWrap: true,
+                        // Important: Allows list view to fit content
+                        itemCount: messages.length,
+                        itemBuilder: (context, index) {
+                          final message = messages[index];
+                          final isSender = message['senderId'] == widget.userId;
 
-                    return Align(
-                      alignment: isSender ? Alignment.centerRight : Alignment.centerLeft,
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: isSender ? Colors.blue : Colors.grey[300],
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: isSender ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              message['message'],
-                              style: TextStyle(color: isSender ? Colors.white : Colors.black),
+                          return Align(
+                            alignment: isSender
+                                ? Alignment.centerRight
+                                : Alignment.centerLeft,
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(
+                                  vertical: 5, horizontal: 10),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: isSender ? Colors.blue : Colors
+                                    .grey[300],
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: isSender
+                                    ? CrossAxisAlignment.end
+                                    : CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    message['content'],
+                                    style: TextStyle(
+                                        color: isSender ? Colors.white : Colors
+                                            .black),
+                                  ),
+                                  SizedBox(height: 5),
+                                  Text(
+                                    message['timestamp'] != null
+                                        ? formatTimestamp(
+                                        message['timestamp'] as Timestamp?)
+                                        : 'Pending...',
+                                    style: TextStyle(
+                                        fontSize: 8, color: Colors.black),
+                                  ),
+                                ],
+                              ),
                             ),
-                            SizedBox(height: 5),
-                            Text(
-                              message['timestamp'] != null
-                                  ? formatTimestamp(message['timestamp'] as Timestamp?)
-                                  : 'Pending...',
-                              style: TextStyle(fontSize: 8, color: Colors.black),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                );
-              },
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
           Padding(
@@ -317,23 +329,26 @@ class _InitialChatPageState extends State<InitialChatPage> {
                 Expanded(
                   child: TextField(
                     controller: _controller,
-                    decoration: InputDecoration(hintText: 'Enter your message'),
+                    decoration: InputDecoration(
+                      hintText: 'Enter your message',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      contentPadding: EdgeInsets.symmetric(
+                          vertical: 10, horizontal: 15),
+                    ),
                   ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.send),
+                  icon: Icon(Icons.send, color: Colors.blueAccent),
                   onPressed: () async {
                     if (_controller.text.isNotEmpty) {
                       String userMessage = _controller.text;
-
-                      // Send user message
                       await sendMessage(
-                        widget.userId,
-                        widget.receiverId,
-                        userMessage,
-                      );
-
-                      _controller.clear(); // Clear the input field
+                          widget.userId, widget.receiverId, userMessage);
+                      _controller.clear();
+                      // Scroll to bottom after sending a message
+                      _scrollToBottom();
                     }
                   },
                 ),

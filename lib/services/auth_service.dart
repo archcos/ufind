@@ -144,8 +144,8 @@ class AuthService {
     try {
       // Prepare user data for update
       Map<String, dynamic> updatedData = {
-        'first_name': firstName,
-        'last_name': lastName,
+        'firstName': firstName,
+        'lastName': lastName,
       };
 
       // If a new password is provided, generate a new salt and hash the password

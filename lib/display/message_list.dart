@@ -1,80 +1,98 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // Import intl for date formatting
-import 'chat_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
+import 'package:untitled/display/chat_screen.dart';
 
 class MessagesListPage extends StatelessWidget {
   final String userId;
 
   MessagesListPage({required this.userId});
 
-  // Fetch sender's full name from the 'users' collection
-  Future<String> _getSenderFullName(String senderId) async {
-    DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(senderId).get();
-    String firstName = userDoc['first_name'] ?? '';
-    String lastName = userDoc['last_name'] ?? '';
-    return '$firstName $lastName';
-  }
-
-  // Fetch unread message count for each sender
-  Future<int> _getUnreadCount(String senderId) async {
-    final snapshot = await FirebaseFirestore.instance
-        .collection('messages')
-        .where('receiver', isEqualTo: userId)
-        .where('sender', isEqualTo: senderId)
-        .where('isRead', isEqualTo: false)
-        .get();
-
-    return snapshot.docs.length;
-  }
-
-  // Stream to get the sender details including the most recent message timestamp
-  Stream<List<Map<String, dynamic>>> getSendersWithTimestamps(String userId) {
+  Stream<List<Map<String, dynamic>>> getUserChats(String userId) {
     return FirebaseFirestore.instance
-        .collection('messages')
-        .where('receiver', isEqualTo: userId)
+        .collection('chats1')
+        .where('participants', arrayContains: userId)
         .snapshots()
-        .asyncMap((snapshot) async {
-      Map<String, Timestamp> senderTimestamps = {};
+        .map((snapshot) => snapshot.docs
+        .map((doc) => {"id": doc.id, ...doc.data() as Map<String, dynamic>})
+        .toList());
+  }
 
-      // Collect the latest message timestamp for each sender
-      for (var doc in snapshot.docs) {
-        String sender = doc['sender'];
-        Timestamp timestamp = doc['timestamp'];
-        if (!senderTimestamps.containsKey(sender) || senderTimestamps[sender]!.compareTo(timestamp) < 0) {
-          senderTimestamps[sender] = timestamp;
-        }
-      }
+  Stream<Map<String, dynamic>?> getLastMessage(String chatId) {
+    return FirebaseFirestore.instance
+        .collection('chats1')
+        .doc(chatId)
+        .collection('messages')
+        .orderBy('timestamp', descending: true)
+        .limit(1)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.isNotEmpty ? snapshot.docs.first.data() : null);
+  }
 
-      // Add receivers (when user is the sender)
-      final sentMessagesSnapshot = await FirebaseFirestore.instance
-          .collection('messages')
-          .where('sender', isEqualTo: userId)
-          .get();
-
-      for (var doc in sentMessagesSnapshot.docs) {
-        String receiver = doc['receiver'];
-        Timestamp timestamp = doc['timestamp'];
-        if (!senderTimestamps.containsKey(receiver) || senderTimestamps[receiver]!.compareTo(timestamp) < 0) {
-          senderTimestamps[receiver] = timestamp;
-        }
-      }
-
-      // Convert the map into a sorted list by timestamp
-      return senderTimestamps.entries
-          .map((entry) => {'senderId': entry.key, 'timestamp': entry.value})
-          .toList()
-        ..sort((a, b) => (b['timestamp'] as Timestamp).compareTo(a['timestamp'] as Timestamp)); // Cast explicitly
+  // Stream for unread count
+  Stream<int> getUnreadCount(String chatId, String userId) {
+    return FirebaseFirestore.instance
+        .collection('chats1')
+        .doc(chatId)
+        .collection('messages')
+        .where('recipientId', isEqualTo: userId)
+        .where('isRead', isEqualTo: false)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.length;
     });
   }
 
-  // Helper function to format the timestamp into a readable string
-  String _formatTimestamp(Timestamp timestamp) {
-    try {
-      final date = timestamp.toDate();
-      return DateFormat('MM/dd/yyyy hh:mm a').format(date); // Format: MM/DD/YYYY hh:mm AM/PM
-    } catch (e) {
-      return "Invalid date";
+  // Fetch the chatmate's name (firstName and lastName) and ID for display
+  Stream<Map<String, dynamic>> getChatmateInfo(String chatId, String currentUserId) {
+    return FirebaseFirestore.instance
+        .collection('chats1')
+        .doc(chatId)
+        .get()
+        .then((chatDoc) {
+      final participants = chatDoc['participants'] as List;
+      final chatmateId = participants.firstWhere((id) => id != currentUserId);
+      return FirebaseFirestore.instance
+          .collection('users')
+          .doc(chatmateId)
+          .get()
+          .then((userDoc) {
+        return {
+          'fullName': "${userDoc['firstName']} ${userDoc['lastName']}",
+          'id': chatmateId,
+        };
+      });
+    }).asStream();
+  }
+
+  String formatTimestamp(Timestamp? timestamp) {
+    if (timestamp == null) return "Pending...";
+    final dateTime = timestamp.toDate();
+    return DateFormat('MM-dd hh:mm a').format(dateTime);
+  }
+
+  // Mark messages as read when opening the chat
+  Future<void> markMessagesAsRead(String chatId, String userId) async {
+    final messagesSnapshot = await FirebaseFirestore.instance
+        .collection('chats1')
+        .doc(chatId)
+        .collection('messages')
+        .where('recipient', isEqualTo: userId)
+        .where('isRead', isEqualTo: true)
+        .get();
+
+    for (var messageDoc in messagesSnapshot.docs) {
+      await messageDoc.reference.update({'isRead': true});
+    }
+  }
+
+  // Helper function to get initials from a full name
+  String getInitials(String fullName) {
+    final nameParts = fullName.split(' ');
+    if (nameParts.length > 1) {
+      return '${nameParts[0][0]}${nameParts[1][0]}'.toUpperCase();
+    } else {
+      return '${nameParts[0][0]}'.toUpperCase(); // Handle case if only first name exists
     }
   }
 
@@ -82,132 +100,121 @@ class MessagesListPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Your Messages"),
-        backgroundColor: Colors.lightBlueAccent,
+        title: Text("Conversations", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+        centerTitle: true,
+        backgroundColor: Colors.blueAccent,
+        elevation: 5,
       ),
       body: StreamBuilder<List<Map<String, dynamic>>>(
-        stream: getSendersWithTimestamps(userId),
+        stream: getUserChats(userId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
           }
-
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(
-              child: Text(
-                "No messages yet.",
-                style: TextStyle(fontSize: 16, color: Colors.grey),
-              ),
-            );
+          if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
+            return Center(child: Text("No conversations yet.", style: TextStyle(fontSize: 18, color: Colors.grey)));
           }
 
-          final senderDetailsWithTimestamps = snapshot.data!;
+          final chats = snapshot.data!;
+          return ListView.builder(
+            padding: EdgeInsets.symmetric(vertical: 10),
+            itemCount: chats.length,
+            itemBuilder: (context, index) {
+              final chat = chats[index];
 
-          return FutureBuilder<List<Map<String, String>>>(
-            future: Future.wait(senderDetailsWithTimestamps.map((sender) async {
-              String senderId = sender['senderId'];
-              String fullName = await _getSenderFullName(senderId);
-              int unreadCount = await _getUnreadCount(senderId);
-              return {
-                'senderId': senderId,
-                'fullName': fullName,
-                'unreadCount': unreadCount.toString(),
-                'timestamp': (sender['timestamp'] as Timestamp).millisecondsSinceEpoch.toString(),
-              };
-            }).toList()),
-            builder: (context, futureSnapshot) {
-              if (futureSnapshot.connectionState == ConnectionState.waiting) {
-                return Center(child: CircularProgressIndicator());
-              }
+              return StreamBuilder<Map<String, dynamic>>(
+                stream: getChatmateInfo(chat['id'], userId),
+                builder: (context, nameSnapshot) {
+                  if (nameSnapshot.connectionState == ConnectionState.waiting) {
+                    return Center(child: CircularProgressIndicator());
+                  }
 
-              if (!futureSnapshot.hasData || futureSnapshot.data!.isEmpty) {
-                return Center(
-                  child: Text(
-                    "No senders found.",
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
-                  ),
-                );
-              }
+                  final chatmateName = nameSnapshot.data?['fullName'] ?? "Unknown User";
+                  final chatmateId = nameSnapshot.data?['id'] ?? "Unknown ID";
+                  final chatmateInitials = getInitials(chatmateName);
 
-              final senderDetails = futureSnapshot.data!;
+                  return StreamBuilder<Map<String, dynamic>?>(
+                    stream: getLastMessage(chat['id']),
+                    builder: (context, lastMessageSnapshot) {
+                      String lastMessage = "No messages yet";
+                      String lastTime = "Pending...";
 
-              return ListView.builder(
-                itemCount: senderDetails.length,
-                itemBuilder: (context, index) {
-                  final sender = senderDetails[index];
-                  final senderId = sender['senderId']!;
-                  final fullName = sender['fullName']!;
-                  final unreadCount = sender['unreadCount']!;
-                  final timestamp = Timestamp.fromMillisecondsSinceEpoch(int.parse(sender['timestamp']!));
-                  final initials = fullName
-                      .split(' ')
-                      .map((e) => e.isNotEmpty ? e[0] : '')
-                      .join()
-                      .toUpperCase();
+                      if (lastMessageSnapshot.hasData) {
+                        final message = lastMessageSnapshot.data!;
+                        lastMessage = message['content'] ?? "No messages";
+                        lastTime = formatTimestamp(message['timestamp'] as Timestamp?);
+                      }
 
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                    child: Card(
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: Colors.lightBlueAccent,
-                          child: Text(
-                            initials,
-                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        title: Text(
-                          fullName,
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              unreadCount != '0'
-                                  ? "$unreadCount unread messages"
-                                  : "Tap to view messages",
-                              style: TextStyle(
-                                color: unreadCount != '0' ? Colors.red : Colors.grey[600],
-                                fontSize: 14,
+                      return StreamBuilder<int>(
+                        stream: getUnreadCount(chat['id'], userId),
+                        builder: (context, unreadSnapshot) {
+                          final unreadCount = unreadSnapshot.data ?? 0;
+
+                          return Card(
+                            margin: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                            elevation: 3,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            child: ListTile(
+                              leading: CircleAvatar(
+                                backgroundColor: Colors.blueAccent,
+                                child: Text(
+                                  chatmateInitials,
+                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                ),
                               ),
-                            ),
-                            Text(
-                              "Last message: ${_formatTimestamp(timestamp)}", // Format the timestamp
-                              style: TextStyle(color: Colors.grey[600], fontSize: 10),
-                            ),
-                          ],
-                        ),
-                        trailing: Icon(Icons.arrow_forward_ios, color: Colors.lightBlueAccent),
-                        onTap: () async {
-                          // Mark messages as read when opening the chat
-                          final query = FirebaseFirestore.instance
-                              .collection('messages')
-                              .where('sender', isEqualTo: senderId)
-                              .where('receiver', isEqualTo: userId)
-                              .where('isRead', isEqualTo: false);
-
-                          final snapshot = await query.get();
-                          for (var doc in snapshot.docs) {
-                            doc.reference.update({'isRead': true});
-                          }
-
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ChatScreen(
-                                userId: userId,
-                                receiverId: senderId,
+                              title: Text(
+                                chatmateName,
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                               ),
+                              subtitle: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      unreadCount > 0
+                                          ? "$lastMessage ($unreadCount unread)"
+                                          : lastMessage,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(fontSize: 14, color: Colors.black54),
+                                    ),
+                                  ),
+                                  Text(
+                                    lastTime,
+                                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                                  ),
+                                ],
+                              ),
+                              trailing: unreadCount > 0
+                                  ? CircleAvatar(
+                                radius: 12,
+                                backgroundColor: Colors.red,
+                                child: Text(
+                                  unreadCount.toString(),
+                                  style: TextStyle(color: Colors.white, fontSize: 12),
+                                ),
+                              )
+                                  : null,
+                              onTap: () async {
+                                // Mark messages as read when opening the chat
+                                await markMessagesAsRead(chat['id'], userId);
+
+                                final receiverId = chat['participants']
+                                    .firstWhere((id) => id != userId);
+
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ChatScreen(
+                                      userId: userId,
+                                      receiverId: receiverId,
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
                           );
                         },
-                      ),
-                    ),
+                      );
+                    },
                   );
                 },
               );

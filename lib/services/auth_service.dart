@@ -71,6 +71,7 @@ class AuthService {
     // Save user details (ensure that the keys match your Firestore document fields)
     await prefs.setString('user_first_name', userDoc['firstName']);
     await prefs.setString('user_last_name', userDoc['lastName']);
+    await prefs.setString('contact_number', userDoc['contactNumber']);
     await prefs.setString(
         'user_email', email ?? ''); // Save email from Firebase Authentication
     await prefs.setString(
@@ -140,12 +141,14 @@ class AuthService {
     }
   }
 
-  Future<bool> updateProfile(String schoolId, String firstName, String lastName, String password) async {
+  Future<bool> updateProfile(String schoolId, String firstName, String lastName, String contactNumber, String password) async {
     try {
       // Prepare user data for update
       Map<String, dynamic> updatedData = {
         'firstName': firstName,
         'lastName': lastName,
+        'contactNumber': contactNumber,
+
       };
 
       // If a new password is provided, generate a new salt and hash the password
@@ -163,6 +166,7 @@ class AuthService {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       await prefs.setString('user_first_name', firstName);
       await prefs.setString('user_last_name', lastName);
+      await prefs.setString('contact_number', contactNumber);
       await prefs.setString('user_school_id', schoolId);
 
       print("Profile updated successfully!");

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:untitled/display/create_ticket.dart';
 import 'dart:ui';
 import '../models/ticket_model.dart';
 import 'item_details.dart';
@@ -234,6 +235,16 @@ class _ItemsListPageState extends State<ItemsListPage> {
                 ),
               );
             },
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: ()  {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => TicketDetailsPage(),
+            ),
           );
         },
       ),

@@ -17,6 +17,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
   final _schoolIdController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _contactNumberController = TextEditingController();
 
   bool _isRegistering = false;
   bool _isPasswordHidden = true;
@@ -28,9 +29,10 @@ class _RegistrationPageState extends State<RegistrationPage> {
     String lastName = _lastNameController.text.trim();
     String schoolId = _schoolIdController.text.trim();
     String email = _emailController.text.trim();
+    String contactNumber = _contactNumberController.text.trim();
     String password = _passwordController.text.trim();
 
-    if (firstName.isEmpty || lastName.isEmpty || schoolId.isEmpty || email.isEmpty || password.isEmpty) {
+    if (firstName.isEmpty || lastName.isEmpty || schoolId.isEmpty || contactNumber.isEmpty || email.isEmpty || password.isEmpty) {
       _showMessage('Please fill all the fields.');
       return;
     }
@@ -66,6 +68,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
       await FirebaseFirestore.instance.collection('users').doc(schoolId).set({
         'firstName': firstName,
         'lastName': lastName,
+        'contactNumber': contactNumber,
         'emailAddress': email,
         'password': hashedPassword,
         'salt': salt,
@@ -135,6 +138,8 @@ class _RegistrationPageState extends State<RegistrationPage> {
               _buildTextField(_lastNameController, 'Last Name', Icons.person),
               const SizedBox(height: 10),
               _buildTextField(_schoolIdController, 'School ID', Icons.school, isNumber: true),
+              const SizedBox(height: 10),
+              _buildTextField(_contactNumberController, 'Contact Number', Icons.phone, isNumber: true),
               const SizedBox(height: 10),
               _buildTextField(_emailController, 'Email', Icons.email),
               const SizedBox(height: 10),

@@ -120,10 +120,6 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
     // Create a new file with the compressed bytes
     final compressedImage = File(image.path)..writeAsBytesSync(compressedBytes);
 
-    // Print the original and compressed image sizes for debugging
-    print('Original image size: ${image.lengthSync()} bytes');
-    print('Compressed image size: ${compressedImage.lengthSync()} bytes');
-
     return compressedImage;
   }
 
@@ -238,7 +234,6 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
   }
 
 
-// Modify _saveToFirebase to set the document ID dynamically
   Future<void> _saveToFirebase() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? schoolId = prefs.getString('user_school_id');
@@ -250,7 +245,39 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
       return;
     }
 
-    // Check if all fields are filled out correctly (same as your existing code)
+    // Validate form fields and show specific warnings
+    String missingFields = '';
+
+    if (_itemNameController.text.isEmpty) {
+      missingFields += 'Item Name, ';
+    }
+    if (_descriptionController.text.isEmpty) {
+      missingFields += 'Description, ';
+    }
+    if (_dateTimeController.text.isEmpty) {
+      missingFields += 'Date & Time, ';
+    }
+    if (_contactNameController.text.isEmpty) {
+      missingFields += 'Full Name, ';
+    }
+    if (_contactNumberController.text.isEmpty) {
+      missingFields += 'Contact Number, ';
+    }
+    if (_emailController.text.isEmpty) {
+      missingFields += 'Email, ';
+    }
+    if (_lastSeenLocation == "Tap to set location" || _selectedLocation == null) {
+      missingFields += 'Location, ';
+    }
+
+    // Remove trailing comma and space
+    if (missingFields.isNotEmpty) {
+      missingFields = missingFields.substring(0, missingFields.length - 2);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please fill in the following fields: $missingFields')),
+      );
+      return;
+    }
 
     String uniqueId = _generateRandomId();
     String documentId = '${schoolId}_$uniqueId'; // Use schoolId + unique ID for "Keep"
@@ -261,7 +288,7 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
       _claimStatus = 'keep';
     }
 
-    // Save the ticket details to Firestore (same as your existing code)
+    // Save the ticket details to Firestore
     await FirebaseFirestore.instance.collection('items').doc(documentId).set({
       'status': _itemType,
       'name': _itemNameController.text,
@@ -281,6 +308,7 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
       const SnackBar(content: Text('Ticket Saved Successfully!')),
     );
   }
+
 
 
 // Generate 8-character random alphanumeric ID
@@ -448,8 +476,8 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
           try {
             // Upload image to Supabase first and get the image URL
             final imageUrl = await _uploadImageToSupabase();
-            print(imageUrl);
 
+            // Check if the image upload was successful
             if (imageUrl != null) {
               setState(() {
                 _imageUrl = imageUrl; // Set the image URL after successful upload
@@ -458,21 +486,20 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
               // Proceed to save the ticket details to Firebase
               await _saveToFirebase();
 
-              // Navigate to /browse-items after successful save
-              if (context.mounted) {
-                Navigator.pushReplacementNamed(context, '/browse-items');
-              }
+              // After saving successfully, show success message
             } else {
+              // If image upload fails, show an error message
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Image upload failed. Please try again.')),
               );
             }
           } catch (e) {
+            // If there is an error, show the error message
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text('An error occurred: $e')),
             );
           } finally {
-            // Reset the loading state
+            // Reset the loading state, whether success or failure
             if (mounted) {
               setState(() {
                 _isLoading = false;

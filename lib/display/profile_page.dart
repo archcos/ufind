@@ -15,6 +15,7 @@ class _ProfilePageState extends State<ProfilePage> {
   TextEditingController _lastNameController = TextEditingController();
   TextEditingController _schoolIdController = TextEditingController();
   TextEditingController _passwordController = TextEditingController();
+  TextEditingController _contactNumberController = TextEditingController();
   String? userId;  // Use String for userId (since it's stored as a document ID)
 
   @override
@@ -28,7 +29,7 @@ class _ProfilePageState extends State<ProfilePage> {
     final prefs = await SharedPreferences.getInstance();
     final firstName = prefs.getString('user_first_name');
     final lastName = prefs.getString('user_last_name');
-    // final email = prefs.getString('user_email');
+    final contactNumber = prefs.getString('contact_number');
     final schoolId = prefs.getString('user_school_id'); // school_id is stored as String
 
     if (schoolId == null) {
@@ -41,6 +42,7 @@ class _ProfilePageState extends State<ProfilePage> {
       setState(() {
         _firstNameController.text = firstName ?? '';
         _lastNameController.text = lastName ?? '';
+        _contactNumberController.text = contactNumber ?? '';
         _schoolIdController.text = schoolId; // schoolId as String
         _passwordController.text = ''; // Clear password field as it's sensitive data
         userId = schoolId; // Set userId to schoolId
@@ -55,6 +57,7 @@ class _ProfilePageState extends State<ProfilePage> {
         userId!,  // Pass userId (schoolId) as String
         _firstNameController.text,
         _lastNameController.text,
+        _contactNumberController.text,
         _passwordController.text, // Pass the password for update
       );
 
@@ -67,6 +70,7 @@ class _ProfilePageState extends State<ProfilePage> {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('user_first_name', _firstNameController.text);
         await prefs.setString('user_last_name', _lastNameController.text);
+        await prefs.setString('contact_number', _contactNumberController.text);
 
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -113,6 +117,10 @@ class _ProfilePageState extends State<ProfilePage> {
               TextField(
                 controller: _lastNameController,
                 decoration: const InputDecoration(labelText: 'Last Name'),
+              ),
+              TextField(
+                controller: _contactNumberController,
+                decoration: const InputDecoration(labelText: 'Contact Number'),
               ),
               TextField(
                 controller: _schoolIdController,

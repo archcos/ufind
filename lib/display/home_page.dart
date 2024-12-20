@@ -12,6 +12,11 @@ class HomePage extends StatelessWidget {
 
   HomePage({super.key});
 
+  Future<String?> _getSchoolId() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString('user_school_id');
+  }
+
   // Logout method
   void _logout(BuildContext context) async {
     await AuthService().logOut();  // Call the logOut method from AuthService
@@ -36,6 +41,17 @@ class HomePage extends StatelessWidget {
       return 0;  // Return 0 if there's an error
     }
   }
+
+  Stream<int> getUnreads(String userId) {
+    return FirebaseFirestore.instance
+        .collectionGroup('messages') // Query across all subcollections named 'messages'
+        .where('recipientId', isEqualTo: userId)
+        .where('isRead', isEqualTo: false)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.length); // Count unread messages
+  }
+
+
 
   Stream<int> _getUnreadMessagesCountStream(String userId) {
     return FirebaseFirestore.instance
@@ -84,100 +100,40 @@ class HomePage extends StatelessWidget {
     return Scaffold(
       key: _scaffoldKey, // Assign the key to the Scaffold
       appBar: AppBar(
-        backgroundColor: Colors.white,  // Makes the AppBar transparent
+        backgroundColor: Colors.white,  // Makes the AppBar white
         elevation: 0,  // Removes the shadow of the AppBar
         leading: FutureBuilder<String>(
-          future: _getUserId(),  // Fetch user ID first
+          future: _getUserId(), // Fetch user ID first
           builder: (context, userIdSnapshot) {
-            if (userIdSnapshot.connectionState == ConnectionState.waiting) {
-              return const CircleAvatar(
-                radius: 20,
-                backgroundImage: AssetImage('assets/images/profile.jpg'),  // Placeholder
-              );
-            }
-
-            if (userIdSnapshot.hasError || !userIdSnapshot.hasData) {
-              return const CircleAvatar(
-                radius: 20,
-                backgroundImage: AssetImage('assets/images/profile.jpg'),  // Placeholder
+            if (userIdSnapshot.connectionState == ConnectionState.waiting ||
+                userIdSnapshot.hasError || !userIdSnapshot.hasData) {
+              // Show placeholder while loading or on error
+              return GestureDetector(
+                onTap: () {
+                  Navigator.pushNamed(context, '/profile'); // Redirect to profile
+                },
+                child: const CircleAvatar(
+                  radius: 10,
+                  backgroundImage: AssetImage('assets/images/profile.jpg'), // Placeholder profile image
+                ),
               );
             }
 
             String userId = userIdSnapshot.data!;
 
-            // Use StreamBuilder to listen to unread messages count
-            return StreamBuilder<int>(
-              stream: _getUnreadMessagesCountStream(userId),  // Listen to unread messages count stream
-              builder: (context, unreadMessagesSnapshot) {
-                if (unreadMessagesSnapshot.connectionState == ConnectionState.waiting) {
-                  return const CircleAvatar(
-                    radius: 20,
-                    backgroundImage: AssetImage('assets/images/profile.jpg'),  // Placeholder
-                  );
-                }
-
-                if (unreadMessagesSnapshot.hasError || !unreadMessagesSnapshot.hasData) {
-                  return const CircleAvatar(
-                    radius: 20,
-                    backgroundImage: AssetImage('assets/images/profile.jpg'),  // Placeholder
-                  );
-                }
-
-                int unreadCount = unreadMessagesSnapshot.data!;
-
-                return PopupMenuButton<String>(
-                  icon: Stack(
-                    children: [
-                      CircleAvatar(
-                        radius: 20,
-                        backgroundImage: AssetImage('assets/images/profile.jpg'),  // Your profile image
-                      ),
-                      if (unreadCount > 0)
-                        Positioned(
-                          right: 0,
-                          top: 0,
-                          child: CircleAvatar(
-                            radius: 10,
-                            backgroundColor: Colors.red,
-                            child: Text(
-                              '$unreadCount',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                  onSelected: (String value) {
-                    _handlePopupMenuSelection(value, context);  // Handle menu item selection
-                  },
-                  itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                    const PopupMenuItem<String>(
-                      value: 'profile',
-                      child: Text('Profile'),
-                    ),
-                    const PopupMenuItem<String>(
-                      value: 'message',
-                      child: Text('Messages'),
-                    ),
-                    const PopupMenuItem<String>(
-                      value: 'logout',
-                      child: Text('Logout'),
-                    ),
-                  ],
-                );
+            // Render the circular avatar as a clickable button
+            return GestureDetector(
+              onTap: () {
+                Navigator.pushNamed(context, '/profile'); // Redirect to profile
               },
+              child: CircleAvatar(
+                radius: 10,
+                backgroundImage: AssetImage('assets/images/profile.jpg'),  // Your profile image
+              ),
             );
           },
         ),
-        actions: [
-          // Add additional actions if needed
-        ],
       ),
-
       endDrawer: FutureBuilder<String>( // Use endDrawer to open the drawer from the right
         future: _getUserFullName(), // Fetch the user's full name
         builder: (context, snapshot) {
@@ -223,25 +179,11 @@ class HomePage extends StatelessWidget {
                     ],
                   ),
                 ),
-                // Navigation Items
                 ListTile(
-                  leading: const Icon(Icons.account_circle),
-                  title: const Text('My Account'),
+                  leading: const Icon(Icons.view_list),
+                  title: const Text('View My Ticket'),
                   onTap: () {
-                    Navigator.pushNamed(context, '/profile');
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.message),
-                  title: const Text('Messages'),
-                  onTap: () async { // Mark the onTap callback as async
-                    String userId = await _getUserId(); // Await the Future to get the String value
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => MessagesListPage(userId: userId),
-                      ),
-                    );
+                    Navigator.pushNamed(context, '/my-tickets');
                   },
                 ),
                 ListTile(
@@ -258,13 +200,7 @@ class HomePage extends StatelessWidget {
                     Navigator.pushNamed(context, '/browse-items');
                   },
                 ),
-                ListTile(
-                  leading: const Icon(Icons.view_list),
-                  title: const Text('View My Ticket'),
-                  onTap: () {
-                    Navigator.pushNamed(context, '/my-tickets');
-                  },
-                ),
+
                 ListTile(
                   leading: const Icon(Icons.info),
                   title: const Text('About Us'),
@@ -550,6 +486,79 @@ class HomePage extends StatelessWidget {
           ],
         ),
       ),
+      floatingActionButton: FutureBuilder<String?>(
+        future: _getSchoolId(), // Fetch userId first
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Container(); // Show an empty container while waiting for data
+          }
+
+          if (snapshot.hasError || !snapshot.hasData) {
+            return Container(); // Show an empty container if there's an error or no data
+          }
+
+          final userId = snapshot.data; // Now you have the userId (schoolId)
+
+          return StreamBuilder<int>(
+            stream: getUnreads(userId!), // Pass the userId (non-nullable)
+            builder: (context, unreadMessagesSnapshot) {
+              if (unreadMessagesSnapshot.connectionState == ConnectionState.waiting) {
+                return Container(); // Show an empty container while waiting for data
+              }
+
+              final totalUnreadCount = unreadMessagesSnapshot.data ?? 0;
+
+              return FloatingActionButton(
+                onPressed: () async {
+                  String userId = await _getUserId();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => MessagesListPage(userId: userId),
+                    ),
+                  );
+                },
+                backgroundColor: Colors.blueAccent,
+                child: Stack(
+                  clipBehavior: Clip.none, // Ensure the badge doesn't get clipped
+                  children: [
+                    Icon(Icons.chat),
+                    if (totalUnreadCount > 0)
+                      Positioned(
+                        right: -6, // Adjust position to avoid clipping
+                        top: -6, // Position the badge above the icon
+                        child: Container(
+                          padding: EdgeInsets.all(5),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                          constraints: BoxConstraints(
+                            minWidth: 18,
+                            minHeight: 18, // Ensure a minimum size for the badge
+                          ),
+                          child: Center(
+                            child: Text(
+                              totalUnreadCount.toString(),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: totalUnreadCount > 9 ? 10 : 12, // Adjust font size for multi-digit numbers
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      ),
+
+
+
     );
   }
 }

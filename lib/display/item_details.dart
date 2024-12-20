@@ -116,19 +116,32 @@ class ItemDetailsPage extends StatelessWidget {
                   onPressed: () async {
                     final senderId = await _getSenderId();
                     if (senderId.isNotEmpty) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => InitialChatPage(
-                            userId: senderId,
-                            receiverId: ticket.id.length > 10 ? ticket.id.substring(0, 10) : ticket.id,
-                            itemType: ticket.status,
+                      final senderPrefix = senderId.length > 10 ? senderId.substring(0, 10) : senderId;
+                      final ticketPrefix = ticket.id.length > 10 ? ticket.id.substring(0, 10) : ticket.id;
+
+                      if (senderPrefix == ticketPrefix) {
+                        // Display a warning if the user tries to chat with themselves
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("You cannot chat with yourself."),
                           ),
-                        ),
-                      );
+                        );
+                      } else {
+                        // Navigate to the chat screen
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => InitialChatPage(
+                              userId: senderId,
+                              receiverId: ticket.id,
+                              itemType: ticket.status,
+                            ),
+                          ),
+                        );
+                      }
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Unable to fetch userId")),
+                        const SnackBar(content: Text("Unable to fetch user ID")),
                       );
                     }
                   },

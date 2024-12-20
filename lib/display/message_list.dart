@@ -10,7 +10,7 @@ class MessagesListPage extends StatelessWidget {
 
   Stream<List<Map<String, dynamic>>> getUserChats(String userId) {
     return FirebaseFirestore.instance
-        .collection('chats1')
+        .collection('chats')
         .where('participants', arrayContains: userId)
         .snapshots()
         .map((snapshot) => snapshot.docs
@@ -20,7 +20,7 @@ class MessagesListPage extends StatelessWidget {
 
   Stream<Map<String, dynamic>?> getLastMessage(String chatId) {
     return FirebaseFirestore.instance
-        .collection('chats1')
+        .collection('chats')
         .doc(chatId)
         .collection('messages')
         .orderBy('timestamp', descending: true)
@@ -32,7 +32,7 @@ class MessagesListPage extends StatelessWidget {
   // Stream for unread count
   Stream<int> getUnreadCount(String chatId, String userId) {
     return FirebaseFirestore.instance
-        .collection('chats1')
+        .collection('chats')
         .doc(chatId)
         .collection('messages')
         .where('recipientId', isEqualTo: userId)
@@ -46,7 +46,7 @@ class MessagesListPage extends StatelessWidget {
   // Fetch the chatmate's name (firstName and lastName) and ID for display
   Stream<Map<String, dynamic>> getChatmateInfo(String chatId, String currentUserId) {
     return FirebaseFirestore.instance
-        .collection('chats1')
+        .collection('chats')
         .doc(chatId)
         .get()
         .then((chatDoc) {
@@ -74,7 +74,7 @@ class MessagesListPage extends StatelessWidget {
   // Mark messages as read when opening the chat
   Future<void> markMessagesAsRead(String chatId, String userId) async {
     final messagesSnapshot = await FirebaseFirestore.instance
-        .collection('chats1')
+        .collection('chats')
         .doc(chatId)
         .collection('messages')
         .where('recipient', isEqualTo: userId)
@@ -100,7 +100,7 @@ class MessagesListPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Conversations", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+        title: const Text("Conversations", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
         centerTitle: true,
         backgroundColor: Colors.blueAccent,
         elevation: 5,
@@ -109,15 +109,15 @@ class MessagesListPage extends StatelessWidget {
         stream: getUserChats(userId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text("No conversations yet.", style: TextStyle(fontSize: 18, color: Colors.grey)));
+            return const Center(child: Text("No conversations yet.", style: TextStyle(fontSize: 18, color: Colors.grey)));
           }
 
           final chats = snapshot.data!;
           return ListView.builder(
-            padding: EdgeInsets.symmetric(vertical: 10),
+            padding: const EdgeInsets.symmetric(vertical: 10),
             itemCount: chats.length,
             itemBuilder: (context, index) {
               final chat = chats[index];
@@ -126,11 +126,11 @@ class MessagesListPage extends StatelessWidget {
                 stream: getChatmateInfo(chat['id'], userId),
                 builder: (context, nameSnapshot) {
                   if (nameSnapshot.connectionState == ConnectionState.waiting) {
-                    return Center(child: CircularProgressIndicator());
+                    return const Center(child: CircularProgressIndicator());
                   }
 
                   final chatmateName = nameSnapshot.data?['fullName'] ?? "Unknown User";
-                  final chatmateId = nameSnapshot.data?['id'] ?? "Unknown ID";
+                  // final chatmateId = nameSnapshot.data?['id'] ?? "Unknown ID";
                   final chatmateInitials = getInitials(chatmateName);
 
                   return StreamBuilder<Map<String, dynamic>?>(
@@ -151,7 +151,7 @@ class MessagesListPage extends StatelessWidget {
                           final unreadCount = unreadSnapshot.data ?? 0;
 
                           return Card(
-                            margin: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                            margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
                             elevation: 3,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             child: ListTile(
@@ -159,12 +159,12 @@ class MessagesListPage extends StatelessWidget {
                                 backgroundColor: Colors.blueAccent,
                                 child: Text(
                                   chatmateInitials,
-                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                                 ),
                               ),
                               title: Text(
                                 chatmateName,
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                               ),
                               subtitle: Row(
                                 children: [
@@ -174,12 +174,12 @@ class MessagesListPage extends StatelessWidget {
                                           ? "$lastMessage ($unreadCount unread)"
                                           : lastMessage,
                                       overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(fontSize: 14, color: Colors.black54),
+                                      style: const TextStyle(fontSize: 14, color: Colors.black54),
                                     ),
                                   ),
                                   Text(
                                     lastTime,
-                                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                                    style: const TextStyle(fontSize: 12, color: Colors.grey),
                                   ),
                                 ],
                               ),
@@ -189,7 +189,7 @@ class MessagesListPage extends StatelessWidget {
                                 backgroundColor: Colors.red,
                                 child: Text(
                                   unreadCount.toString(),
-                                  style: TextStyle(color: Colors.white, fontSize: 12),
+                                  style: const TextStyle(color: Colors.white, fontSize: 12),
                                 ),
                               )
                                   : null,

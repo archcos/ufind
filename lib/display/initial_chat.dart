@@ -32,7 +32,7 @@ class _InitialChatPageState extends State<InitialChatPage> {
     final isRead = false;
 
     final documentId = getChatDocumentId();
-    final chatDocRef = FirebaseFirestore.instance.collection('chats1').doc(
+    final chatDocRef = FirebaseFirestore.instance.collection('chats').doc(
         documentId);
     final messagesRef = chatDocRef.collection('messages');
 
@@ -56,7 +56,7 @@ class _InitialChatPageState extends State<InitialChatPage> {
   Stream<List<Map<String, dynamic>>> getMessages(String userId,
       String receiverId) {
     final documentId = getChatDocumentId();
-    final chatRef = FirebaseFirestore.instance.collection('chats1').doc(
+    final chatRef = FirebaseFirestore.instance.collection('chats').doc(
         documentId).collection('messages');
     return chatRef.orderBy('timestamp').snapshots().map((snapshot) {
       return snapshot.docs.map((doc) => doc.data() as Map<String, dynamic>)
@@ -74,7 +74,7 @@ class _InitialChatPageState extends State<InitialChatPage> {
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
         _scrollController.position.maxScrollExtent,
-        duration: Duration(milliseconds: 300),
+        duration: const Duration(milliseconds: 300),
         curve: Curves.easeOut,
       );
     }
@@ -98,11 +98,11 @@ class _InitialChatPageState extends State<InitialChatPage> {
             children: [
               TextField(
                 controller: descriptionController,
-                decoration: InputDecoration(labelText: 'Item Description '),
+                decoration: const InputDecoration(labelText: 'Item Description '),
               ),
               TextField(
                 controller: timeController,
-                decoration: InputDecoration(labelText: 'Time Lost/Found'),
+                decoration: const InputDecoration(labelText: 'Time Lost/Found'),
                 onTap: () async {
                   final selectedDate = await showDatePicker(
                     context: context,
@@ -124,7 +124,7 @@ class _InitialChatPageState extends State<InitialChatPage> {
                 Navigator.of(context)
                     .pop(); // Close the dialog without doing anything
               },
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -145,11 +145,11 @@ class _InitialChatPageState extends State<InitialChatPage> {
                   Navigator.of(context).pop();
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Please fill in all fields')),
+                    const SnackBar(content: Text('Please fill in all fields')),
                   );
                 }
               },
-              child: Text('Submit'),
+              child: const Text('Submit'),
             ),
           ],
         );
@@ -162,7 +162,7 @@ class _InitialChatPageState extends State<InitialChatPage> {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!isPopupShown && widget.itemType != 'Lost') {
+      if (!isPopupShown && widget.itemType != 'lost') {
         showItemDetailsPopup();
       }
     });
@@ -172,7 +172,7 @@ class _InitialChatPageState extends State<InitialChatPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Chat"),
+        title: const Text("Chat"),
         backgroundColor: Colors.blueAccent,
         elevation: 4,
       ),
@@ -251,7 +251,7 @@ class _InitialChatPageState extends State<InitialChatPage> {
                     stream: getMessages(widget.userId, widget.receiverId),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        return Center(child: CircularProgressIndicator());
+                        return const Center(child: CircularProgressIndicator());
                       }
 
                       if (snapshot.hasError) {
@@ -259,7 +259,7 @@ class _InitialChatPageState extends State<InitialChatPage> {
                       }
 
                       if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                        return Center(child: Text("No messages"));
+                        return const Center(child: Text("No messages"));
                       }
 
                       final messages = snapshot.data!;
@@ -301,13 +301,13 @@ class _InitialChatPageState extends State<InitialChatPage> {
                                         color: isSender ? Colors.white : Colors
                                             .black),
                                   ),
-                                  SizedBox(height: 5),
+                                  const SizedBox(height: 5),
                                   Text(
                                     message['timestamp'] != null
                                         ? formatTimestamp(
                                         message['timestamp'] as Timestamp?)
                                         : 'Pending...',
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                         fontSize: 8, color: Colors.black),
                                   ),
                                 ],
@@ -334,13 +334,13 @@ class _InitialChatPageState extends State<InitialChatPage> {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(15),
                       ),
-                      contentPadding: EdgeInsets.symmetric(
+                      contentPadding: const EdgeInsets.symmetric(
                           vertical: 10, horizontal: 15),
                     ),
                   ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.send, color: Colors.blueAccent),
+                  icon: const Icon(Icons.send, color: Colors.blueAccent),
                   onPressed: () async {
                     if (_controller.text.isNotEmpty) {
                       String userMessage = _controller.text;

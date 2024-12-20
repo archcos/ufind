@@ -217,49 +217,39 @@ class MyTicketPage extends StatelessWidget {
       builder: (context) {
         return AlertDialog(
           title: const Text('Claim Details'),
-          content: Form(
-            key: _claimFormKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  decoration: const InputDecoration(labelText: 'Claimers Student ID'),
-                  onSaved: (value) => claimerId = value,
-                  validator: (value) => value!.isEmpty ? 'Please enter ID' : null,
-                ),
-                TextFormField(
-                  decoration: const InputDecoration(labelText: 'Claimers Name'),
-                  onSaved: (value) => claimerName = value,
-                  validator: (value) => value!.isEmpty ? 'Please enter full name' : null,
-                ),
-                TextFormField(
-                  decoration: const InputDecoration(labelText: 'Year & Section'),
-                  onSaved: (value) => yearSection = value,
-                  validator: (value) => value!.isEmpty ? 'Please enter full name' : null,
-                ),
-                TextFormField(
-                  decoration: const InputDecoration(labelText: 'Description'),
-                  onSaved: (value) => description = value,
-                  validator: (value) => value!.isEmpty ? 'Describe your item' : null,
-                ),
-                TextFormField(
-                  decoration: const InputDecoration(labelText: 'Description'),
-                  onSaved: (value) => description = value,
-                  validator: (value) => value!.isEmpty ? 'Describe your item' : null,
-                ),
-                TextFormField(
-                  decoration: const InputDecoration(labelText: 'Location Lost'),
-                  onSaved: (value) => description = value,
-                  validator: (value) => value!.isEmpty ? 'Last location you remember' : null,
-                ),
-                TextFormField(
-                  decoration: const InputDecoration(labelText: 'Location Lost'),
-                  onSaved: (value) => locationLost = value,
-                   validator: (value) => value!.isEmpty ? 'Last location you remember' : null,
-                ),
-
-
-              ],
+          content: SingleChildScrollView(  // Add scrollability for content
+            child: Form(
+              key: _claimFormKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    decoration: const InputDecoration(labelText: 'Claimers Student ID'),
+                    onSaved: (value) => claimerId = value,
+                    validator: (value) => value!.isEmpty ? 'Please enter ID' : null,
+                  ),
+                  TextFormField(
+                    decoration: const InputDecoration(labelText: 'Claimers Name'),
+                    onSaved: (value) => claimerName = value,
+                    validator: (value) => value!.isEmpty ? 'Please enter full name' : null,
+                  ),
+                  TextFormField(
+                    decoration: const InputDecoration(labelText: 'Year & Section'),
+                    onSaved: (value) => yearSection = value,
+                    validator: (value) => value!.isEmpty ? 'Please enter year and section' : null,
+                  ),
+                  TextFormField(
+                    decoration: const InputDecoration(labelText: 'Description'),
+                    onSaved: (value) => description = value,
+                    validator: (value) => value!.isEmpty ? 'Describe your item' : null,
+                  ),
+                  TextFormField(
+                    decoration: const InputDecoration(labelText: 'Location Lost'),
+                    onSaved: (value) => locationLost = value,
+                    validator: (value) => value!.isEmpty ? 'Last location you remember' : null,
+                  ),
+                ],
+              ),
             ),
           ),
           actions: [
@@ -274,7 +264,15 @@ class MyTicketPage extends StatelessWidget {
                 if (_claimFormKey.currentState!.validate()) {
                   _claimFormKey.currentState!.save();
                   // Process the claim details
-                  _updateTicketWithClaimDetails(ticket, claimerId!, description!, locationLost!, yearSection!, claimerName!, dateReceived!);
+                  _updateTicketWithClaimDetails(
+                    ticket,
+                    claimerId!,
+                    description!,
+                    locationLost!,
+                    yearSection!,
+                    claimerName!,
+                    dateReceived,
+                  );
                   Navigator.pop(context); // Close the dialog
                 }
               },
@@ -288,7 +286,7 @@ class MyTicketPage extends StatelessWidget {
 
   void _updateTicketWithClaimDetails(Ticket ticket, String claimerId, String description, String locationLost, String yearSection, String claimerName, String dateReceived) async {
     try {
-      await FirebaseFirestore.instance.collection('Claims').doc(ticket.id).set({
+      await FirebaseFirestore.instance.collection('Claim').doc(ticket.id).set({
         'studentId': claimerId,
         'description': description,
         'itemId': ticket.id,

@@ -67,6 +67,9 @@ class _ItemsListPageState extends State<ItemsListPage> {
                   isDescending = true;  // Set to descending
                 } else {
                   selectedFilter = value;  // Change sort criteria (e.g. by time or alphabetically)
+                  if (value == "Alphabetical") {
+                    isDescending = false;  // Ensure it's sorted in ascending order when Alphabetical is selected
+                  }
                 }
               });
             },
@@ -80,22 +83,21 @@ class _ItemsListPageState extends State<ItemsListPage> {
               const PopupMenuItem(value: "Ascending", child: Text("Sort Ascending")),
               const PopupMenuItem(value: "Descending", child: Text("Sort Descending")),
             ],
-          ),
+          )
+
         ],
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('items')
-            .orderBy(
-          selectedFilter == "Time" ? "dateTime" : "itemName",
-          descending: selectedFilter == "Time" ? isDescending : false,  // Sort by dateTime descending for default
-        )
+            .orderBy("dateTime", descending: isDescending)
             .snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
 
+          // Map Firestore documents to Ticket models
           final tickets = snapshot.data!.docs
               .map((doc) => Ticket.fromDocument(doc))
               .where((ticket) =>
@@ -103,16 +105,14 @@ class _ItemsListPageState extends State<ItemsListPage> {
               ticket.description.toLowerCase().contains(searchQuery)) &&
               (typeFilter == "All" || ticket.status == typeFilter) &&
               ticket.status != "Completed" && // Exclude tickets with status 'Completed'
-              isItemRecent(DateTime.parse(ticket.dateTime)) // Filter by recent date
-          )
+              isItemRecent(DateTime.parse(ticket.dateTime))) // Filter by recent date
               .toList();
 
-          // If Alphabetical is selected, perform client-side sorting
+          // Apply client-side sorting for "Alphabetical"
           if (selectedFilter == "Alphabetical") {
             tickets.sort((a, b) {
-              // Compare the item names alphabetically, considering ascending/descending order
               int comparison = a.name.toLowerCase().compareTo(b.name.toLowerCase());
-              return isDescending ? -comparison : comparison;  // Reverse if descending
+              return isDescending ? -comparison : comparison; // Reverse if descending
             });
           }
 
@@ -143,13 +143,13 @@ class _ItemsListPageState extends State<ItemsListPage> {
                     children: [
                       if (ticket.imageUrl.isNotEmpty)
                         Container(
-                          height: 120, // Adjust the height of the image container
+                          height: 120,
                           width: double.infinity,
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8), // Rounded corners
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8), // Ensure clipping matches the border radius
+                            borderRadius: BorderRadius.circular(8),
                             child: Stack(
                               children: [
                                 CachedNetworkImage(
@@ -165,9 +165,9 @@ class _ItemsListPageState extends State<ItemsListPage> {
                                 if (ticket.status != 'lost')
                                   Positioned.fill(
                                     child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(8), // Match the container's border radius
+                                      borderRadius: BorderRadius.circular(8),
                                       child: BackdropFilter(
-                                        filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0), // Apply blur
+                                        filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
                                         child: Container(
                                           color: Colors.black.withOpacity(0.7),
                                         ),
@@ -215,7 +215,7 @@ class _ItemsListPageState extends State<ItemsListPage> {
                                 overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 2),
-                              const Spacer(), // This will push the following widget to the bottom
+                              const Spacer(),
                               Text(
                                 DateFormat('MM-dd-yy h:mm a').format(DateTime.parse(ticket.dateTime)),
                                 style: TextStyle(

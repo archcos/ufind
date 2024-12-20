@@ -40,7 +40,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (message.isEmpty) return;
 
     await FirebaseFirestore.instance
-        .collection('chats1')
+        .collection('chats')
         .doc(_getChatId())
         .collection('messages')
         .add({
@@ -63,7 +63,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Stream<QuerySnapshot> getMessages() {
     return FirebaseFirestore.instance
-        .collection('chats1')
+        .collection('chats')
         .doc(_getChatId())
         .collection('messages')
         .orderBy('timestamp')
@@ -89,7 +89,7 @@ class _ChatScreenState extends State<ChatScreen> {
   // Mark all unread messages as read when the chat screen is opened
   Future<void> _markMessagesAsRead() async {
     final messagesSnapshot = await FirebaseFirestore.instance
-        .collection('chats1')
+        .collection('chats')
         .doc(_getChatId())
         .collection('messages')
         .where('recipientId', isEqualTo: widget.userId)

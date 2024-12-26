@@ -239,7 +239,7 @@ class _ItemsListPageState extends State<ItemsListPage> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: ()  {
+        onPressed: () {
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -247,6 +247,12 @@ class _ItemsListPageState extends State<ItemsListPage> {
             ),
           );
         },
+        backgroundColor: Colors.blue, // You can change the color to match your design
+        child: Icon(
+          Icons.add, // You can change the icon to something like a plus sign or a ticket icon
+          color: Colors.white,
+        ),
+        tooltip: 'Add New Ticket', // This shows a hint when the user hovers over or taps the button
       ),
     );
   }

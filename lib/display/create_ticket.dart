@@ -437,7 +437,6 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
               ),
             ),
           ),
-          if (_itemType.isEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 16.0),
               child: ElevatedButton(

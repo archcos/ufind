@@ -71,7 +71,6 @@ Future<void> _onSelectNotification(BuildContext context, String? payload) async 
   }
 }
 
-
 Future<void> fetchUnreadMessages() async {
   final prefs = await SharedPreferences.getInstance();
   final userId = prefs.getString('user_school_id');
@@ -205,21 +204,6 @@ class _SplashScreenState extends State<SplashScreen> {
       );
     });
   }
-
-  // void _navigateToMessageList(BuildContext context) async {
-  //   String? userId = await _getSchoolId();
-  //
-  //   if (userId != null) {
-  //     Navigator.push(
-  //       context,
-  //       MaterialPageRoute(builder: (context) => MessagesListPage(userId: userId)),
-  //     );
-  //   } else {
-  //     // Handle case when userId is null
-  //     print('User ID is null');
-  //   }
-  // }
-
 
   @override
   Widget build(BuildContext context) {

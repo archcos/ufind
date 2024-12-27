@@ -100,7 +100,7 @@ class _ContactUsPageState extends State<ContactUsPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Contact Us Now'),
-        backgroundColor: Colors.blueAccent,
+        backgroundColor: Colors.lightBlueAccent,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -128,12 +128,12 @@ class _ContactUsPageState extends State<ContactUsPage> {
               ),
               const SizedBox(height: 20),
               const Text(
-                'Email: rain.shigatsu@gmail.com', // Replace with your contact email
+                'Email: support@ufind.com', // Replace with your contact email
                 style: TextStyle(fontSize: 15),
               ),
               const SizedBox(height: 10),
               const Text(
-                'Phone: +1 234 567 8901', // Replace with your contact number
+                'Phone: +639295832504', // Replace with your contact number
                 style: TextStyle(fontSize: 15),
               ),
               const SizedBox(height: 10),

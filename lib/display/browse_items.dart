@@ -105,7 +105,7 @@ class _ItemsListPageState extends State<ItemsListPage> {
           (ticket.name.toLowerCase().contains(searchQuery) ||
               ticket.description.toLowerCase().contains(searchQuery)) &&
               (typeFilter == "All" || ticket.status == typeFilter) &&
-              ticket.status != "Completed" && // Exclude tickets with status 'Completed'
+              ticket.ticket != "success" && // Exclude tickets with status 'Completed'
               isItemRecent(DateTime.parse(ticket.dateTime))) // Filter by recent date
               .toList();
 

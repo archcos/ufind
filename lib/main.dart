@@ -17,6 +17,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:background_fetch/background_fetch.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'dart:async'; // Import this for Timer
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> _initializeNotifications(BuildContext context) async {
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -55,21 +58,18 @@ Future<void> _onSelectNotification(BuildContext context, String? payload) async 
   if (payload != null) {
     print('Notification payload: $payload');
     if (payload == 'unread_messages') {
-      String? userId = await _getSchoolId(); // Await the result of _getSchoolId
-
+      String? userId = await _getSchoolId();
       if (userId != null) {
-        // Use the awaited userId for navigation
-        Navigator.push(
-          context,
+        navigatorKey.currentState?.push(
           MaterialPageRoute(builder: (context) => MessagesListPage(userId: userId)),
         );
       } else {
-        // Handle the case when userId is null
         print('User ID is null');
       }
     }
   }
 }
+
 
 Future<void> fetchUnreadMessages() async {
   final prefs = await SharedPreferences.getInstance();
@@ -92,6 +92,9 @@ Future<void> fetchUnreadMessages() async {
   }
 }
 
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+FlutterLocalNotificationsPlugin();
+
 Future<void> _showNotification(int unreadCount) async {
   const AndroidNotificationDetails androidPlatformChannelSpecifics =
   AndroidNotificationDetails(
@@ -99,29 +102,47 @@ Future<void> _showNotification(int unreadCount) async {
     'Unread Messages',
     importance: Importance.high,
     priority: Priority.high,
-    ticker: 'ticker',
   );
 
   const NotificationDetails platformChannelSpecifics =
   NotificationDetails(android: androidPlatformChannelSpecifics);
-
-  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-  FlutterLocalNotificationsPlugin();
 
   await flutterLocalNotificationsPlugin.show(
     0,
     'New Unread Messages',
     'You have $unreadCount unread messages.',
     platformChannelSpecifics,
-    payload: 'unread_messages', // Set the payload
+    payload: 'unread_messages',
   );
 }
+
 
 void backgroundFetchHeadlessTask(HeadlessTask task) async {
   print('[BackgroundFetch] Headless task: ${task.taskId}');
   await fetchUnreadMessages();
   BackgroundFetch.finish(task.taskId);
 }
+
+void _configureBackgroundFetch() async {
+  await BackgroundFetch.configure(
+    BackgroundFetchConfig(
+      minimumFetchInterval: 15, // Check every 15 minutes
+      stopOnTerminate: false,  // Continue even when app is terminated
+      enableHeadless: true,
+      startOnBoot: true// Enable headless mode
+    ),
+        (String taskId) async {
+      print("[BackgroundFetch] Event received: $taskId");
+      await fetchUnreadMessages(); // Your function to fetch messages and show notifications
+      BackgroundFetch.finish(taskId);
+    },
+        (String taskId) async {
+      print("[BackgroundFetch] Task failed: $taskId");
+      BackgroundFetch.finish(taskId);
+    },
+  );
+}
+
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -130,6 +151,8 @@ Future<void> main() async {
     url: 'https://tqvgagdffmjtxswldtgm.supabase.co',
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxdmdhZ2RmZm1qdHhzd2xkdGdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzI3MTExMTgsImV4cCI6MjA0ODI4NzExOH0.nf0tUCRt36slpg5H-f7FUQEdrU3FUe5KNtQoX56xHXY',  // Replace with your Supabase anon key
   );
+  await BackgroundFetch.registerHeadlessTask(backgroundFetchHeadlessTask);
+  _configureBackgroundFetch();
 
   runApp(const MyApp());
 }
@@ -141,6 +164,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     // Initialize notifications with context
     _initializeNotifications(context);
+    startTimer();
 
     return MaterialApp(
       title: 'U-Find',
@@ -149,6 +173,7 @@ class MyApp extends StatelessWidget {
         primaryColor: Colors.green[600],
       ),
       debugShowCheckedModeBanner: false,
+      navigatorKey: navigatorKey, // Add this line
       routes: {
         '/': (context) => const SplashScreen(),
         '/homepage': (context) => HomePage(),
@@ -162,6 +187,15 @@ class MyApp extends StatelessWidget {
         '/my-tickets': (context) => MyTicketPage(),
       },
     );
+  }
+
+  void startTimer() {
+    const interval = Duration(minutes: 1); // Adjust the duration as needed
+
+    Timer.periodic(interval, (timer) async {
+      print('Timer triggered at: ${DateTime.now()}');
+      await fetchUnreadMessages(); // Call the fetchUnreadMessages function
+    });
   }
 }
 

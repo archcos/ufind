@@ -113,7 +113,9 @@ class MyTicketPage extends StatelessWidget {
                                   mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
                                     // Conditionally display the Edit and Delete buttons only if the status is not 'Completed'
-                                    if (ticket.status != 'Completed') ...[
+                                    // Show the edit button when ticket is not 'success' and claimStatus is 'turnover'
+                                    if (ticket.ticket != 'success') ...[
+                                      // Show edit button
                                       IconButton(
                                         icon: const Icon(Icons.edit, color: Colors.blue),
                                         onPressed: () {
@@ -125,27 +127,38 @@ class MyTicketPage extends StatelessWidget {
                                           );
                                         },
                                       ),
-                                      IconButton(
-                                        icon: const Icon(Icons.delete, color: Colors.red),
-                                        onPressed: () {
-                                          _confirmDelete(context, ticket);
-                                        },
-                                      ),
+
+                                      // Show delete button only if claimStatus is not 'turnover'
+                                      if (ticket.claimStatus != 'turnover') ...[
+                                        IconButton(
+                                          icon: const Icon(Icons.delete, color: Colors.red),
+                                          onPressed: () {
+                                            _confirmDelete(context, ticket);
+                                          },
+                                        ),
+                                      ],
                                     ],
+
+
                                   ],
                                 ),
                                 // New "Mark as Completed" button below the icons
                                 Center(
                                   child: TextButton(
-                                    onPressed: ticket.ticket == 'pending'
+                                    // Enable the button only if the ticket is 'pending' and the claimStatus is not 'turnover'
+                                    onPressed: ticket.claimStatus == 'turnover'
+                                        ? null // Disable the button if claimStatus is 'turnover'
+                                        : ticket.ticket == 'pending'
                                         ? () {
                                       _showCompletionDialog(context, ticket);
                                     }
-                                        : null, // Disable if the status is not 'Active'
+                                        : null, // Disable if ticket is not 'pending'
                                     style: TextButton.styleFrom(
                                       foregroundColor: Colors.white,
-                                      backgroundColor: ticket.ticket == 'pending'
-                                          ? Colors.red // Red for "Mark as Completed"
+                                      backgroundColor: ticket.claimStatus == 'turnover' // Disable background color if 'turnover'
+                                          ? Colors.grey // Grey color for disabled button
+                                          : ticket.ticket == 'pending'
+                                          ? Colors.red // Red color for "Mark as Completed"
                                           : Colors.green, // Green for "Completed"
                                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
                                       shape: RoundedRectangleBorder(
@@ -153,9 +166,9 @@ class MyTicketPage extends StatelessWidget {
                                       ),
                                     ),
                                     child: Text(
-                                      ticket.ticket == 'pending'
-                                          ? "Mark as Completed"
-                                          : "Completed", // Show different text based on the status
+                                      ticket.claimStatus == 'turnover'
+                                          ? "Turned Over" // Show "Turned Over" if claimStatus is 'turnover'
+                                          : (ticket.ticket == 'pending' ? "Mark as Completed" : "Completed"), // Show text based on ticket status
                                       style: const TextStyle(fontSize: 10),
                                     ),
                                   ),
@@ -363,16 +376,19 @@ class _EditTicketPageState extends State<EditTicketPage> {
   late String _email;
 
   String? _location;
+
   // Nullable type to avoid late initialization errors
   late String? _status;
   late String? _claimStatus;
+
   // Make it nullable instead of using 'late'
   String? _imageUrl;
+
   // Make this nullable to prevent LateInitializationError
   final _statuses = ['found', 'lost'];
   final _claimStatuses = ['keep', 'turnover'];
 
-  String? _dateTime; // Add this to hold the updated dateTime
+  // String? _dateTime; // Add this to hold the updated dateTime
   TextEditingController _dateTimeController = TextEditingController();
 
   // Dropdown options
@@ -381,6 +397,10 @@ class _EditTicketPageState extends State<EditTicketPage> {
   void initState() {
     super.initState();
     _dateTimeController.text = widget.ticket.dateTime; // Set the initial value
+    _claimStatus = widget.ticket.claimStatus.isNotEmpty
+        ? widget.ticket.claimStatus
+        : 'keep'; // Set initial value for imageUrl
+
   }
 
   @override
@@ -392,9 +412,14 @@ class _EditTicketPageState extends State<EditTicketPage> {
 
   @override
   Widget build(BuildContext context) {
-    _location = widget.ticket.location.isNotEmpty ? widget.ticket.location : null;
-    _status = widget.ticket.status.isNotEmpty ? widget.ticket.status : 'Lost'; // Default to 'Lost' if empty
-    _imageUrl = widget.ticket.imageUrl.isNotEmpty ? widget.ticket.imageUrl : null; // Set initial value for imageUrl
+    _location =
+    widget.ticket.location.isNotEmpty ? widget.ticket.location : null;
+    _status = widget.ticket.status.isNotEmpty
+        ? widget.ticket.status
+        : 'lost'; // Default to 'Lost' if empty
+    _imageUrl = widget.ticket.imageUrl.isNotEmpty
+        ? widget.ticket.imageUrl
+        : null; // Set initial value for imageUrl
 
     // _dateTime = widget.ticket.dateTime; // Initialize the dateTime with current ticket value
 
@@ -411,19 +436,27 @@ class _EditTicketPageState extends State<EditTicketPage> {
                 TextFormField(
                   initialValue: widget.ticket.name,
                   decoration: const InputDecoration(labelText: "Item Name"),
-                  validator: (value) => value!.isEmpty ? "Enter item name" : null,
+                  validator: (value) =>
+                  value!.isEmpty
+                      ? "Enter item name"
+                      : null,
                   onSaved: (value) => _name = value!,
                 ),
                 TextFormField(
                   initialValue: widget.ticket.description,
                   decoration: const InputDecoration(labelText: "Description"),
-                  validator: (value) => value!.isEmpty ? "Enter description" : null,
+                  validator: (value) =>
+                  value!.isEmpty
+                      ? "Enter description"
+                      : null,
                   onSaved: (value) => _description = value!,
                 ),
                 TextFormField(
-                    controller: _dateTimeController, // Use the controller here
+                    controller: _dateTimeController,
+                    // Use the controller here
                     decoration: const InputDecoration(labelText: "Date & Time"),
-                    readOnly: true, // Make the field read-only to open the date picker
+                    readOnly: true,
+                    // Make the field read-only to open the date picker
                     onTap: () async {
                       // Open Date Picker when tapped
                       DateTime? selectedDateTime = await showDatePicker(
@@ -451,9 +484,12 @@ class _EditTicketPageState extends State<EditTicketPage> {
 
                           // Update the controller with the new value
                           setState(() {
-                            _dateTimeController.text = DateFormat('yyyy-MM-dd hh:mm').format(dateTime);
+                            _dateTimeController.text =
+                                DateFormat('yyyy-MM-dd hh:mm').format(dateTime);
                           });
-                          print("Updated dateTime in onTap: ${_dateTimeController.text}");
+                          print(
+                              "Updated dateTime in onTap: ${_dateTimeController
+                                  .text}");
                         }
                       }
                     }
@@ -461,12 +497,16 @@ class _EditTicketPageState extends State<EditTicketPage> {
                 TextFormField(
                   initialValue: widget.ticket.fullName,
                   decoration: const InputDecoration(labelText: "Contact Name"),
-                  validator: (value) => value!.isEmpty ? "Enter contact name" : null,
+                  validator: (value) =>
+                  value!.isEmpty
+                      ? "Enter contact name"
+                      : null,
                   onSaved: (value) => _fullName = value!,
                 ),
                 TextFormField(
                   initialValue: widget.ticket.contactNumber,
-                  decoration: const InputDecoration(labelText: "Contact Number"),
+                  decoration: const InputDecoration(
+                      labelText: "Contact Number"),
                   validator: (value) {
                     if (value!.isEmpty) {
                       return "Enter contact number";
@@ -485,7 +525,9 @@ class _EditTicketPageState extends State<EditTicketPage> {
                     if (value!.isEmpty) {
                       return "Enter email";
                     }
-                    if (!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(value)) {
+                    if (!RegExp(
+                        r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+                        .hasMatch(value)) {
                       return "Enter a valid email";
                     }
                     return null;
@@ -493,19 +535,25 @@ class _EditTicketPageState extends State<EditTicketPage> {
                   onSaved: (value) => _email = value!,
                 ),
                 Visibility(
-                  visible: false,  // This makes it hidden
+                  visible: false, // This makes it hidden
                   child: TextFormField(
                     initialValue: widget.ticket.location,
                     decoration: const InputDecoration(
                       labelText: "Last Seen Location",
                     ),
-                    validator: (value) => value!.isEmpty ? "Enter last seen location" : null,
-                    onSaved: (value) => _location = value!,  // Nullable value
-                    enabled: false,  // This makes the field uneditable
+                    validator: (value) =>
+                    value!.isEmpty
+                        ? "Enter last seen location"
+                        : null,
+                    onSaved: (value) => _location = value!,
+                    // Nullable value
+                    enabled: false, // This makes the field uneditable
                   ),
                 ),
                 DropdownButtonFormField<String>(
-                  value: widget.ticket.status.isNotEmpty ? widget.ticket.status : _statuses[0],
+                  value: widget.ticket.status.isNotEmpty
+                      ? widget.ticket.status
+                      : _statuses[0],
                   decoration: const InputDecoration(labelText: "Status"),
                   items: _statuses.map((status) {
                     return DropdownMenuItem<String>(
@@ -516,32 +564,50 @@ class _EditTicketPageState extends State<EditTicketPage> {
                   onChanged: (value) {
                     _status = value!;
                   },
-                  validator: (value) => value == null ? "Select Item Status" : null,
+                  validator: (value) =>
+                  value == null
+                      ? "Select Item Status"
+                      : null,
                 ),
-                DropdownButtonFormField<String>(
-                  value: widget.ticket.claimStatus.isNotEmpty ? widget.ticket.claimStatus : _claimStatuses[0],
-                  decoration: const InputDecoration(labelText: "Keep/Turnover"),
-                  items: _claimStatuses.map((claimStatus) {
-                    return DropdownMenuItem<String>(
-                      value: claimStatus,
-                      child: Text(claimStatus),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    _claimStatus = value!;
-                  },
-                  validator: (value) => value == null ? "Select item type" : null,
-                ),
+                // Check if the status is 'lost', if so, hide the dropdown.
+                if (widget.ticket.status != 'lost') ...[
+                  DropdownButtonFormField<String>(
+                    value: widget.ticket.claimStatus.isNotEmpty ? widget.ticket
+                        .claimStatus : _claimStatuses[0],
+                    // Use _claimStatus here
+                    decoration: const InputDecoration(
+                        labelText: "Keep/Turnover"),
+                    items: _claimStatuses.map((claimStatus) {
+                      return DropdownMenuItem<String>(
+                        value: claimStatus,
+                        child: Text(claimStatus),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _claimStatus =
+                        value!; // Update _claimStatus when the dropdown value changes
+                      });
+                    },
+                    validator: (value) =>
+                    value == null
+                        ? "Select item type"
+                        : null,
+                  ),
+                ],
                 Visibility(
-                  visible: false,  // This makes it hidden
+                  visible: false, // This makes it hidden
                   child: TextFormField(
                     initialValue: widget.ticket.imageUrl,
                     decoration: const InputDecoration(
                       labelText: "Image URL",
                     ),
-                    validator: (value) => value!.isEmpty ? "Enter image URL" : null,
+                    validator: (value) =>
+                    value!.isEmpty
+                        ? "Enter image URL"
+                        : null,
                     onSaved: (value) => _imageUrl = value!,
-                    enabled: false,  // This makes the field uneditable
+                    enabled: false, // This makes the field uneditable
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -549,9 +615,16 @@ class _EditTicketPageState extends State<EditTicketPage> {
                   child: ElevatedButton(
                     child: const Text("Save Changes"),
                     onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        _formKey.currentState!.save();
-                        _updateTicket(context);
+                      // Check if claimStatus is 'turnover'
+                      if (widget.ticket.claimStatus == 'turnover') {
+                        // Show confirmation dialog if claimStatus is 'turnover'
+                        _showTurnOverWarningDialog(context);
+                      } else {
+                        // Proceed to save changes if not 'turnover'
+                        if (_formKey.currentState!.validate()) {
+                          _formKey.currentState!.save();
+                          _updateTicket(context);
+                        }
                       }
                     },
                   ),
@@ -564,26 +637,68 @@ class _EditTicketPageState extends State<EditTicketPage> {
     );
   }
 
+  void _showTurnOverWarningDialog(BuildContext context) {
+    // Ensure widget is still mounted before showing dialog
+    if (mounted) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text("Warning"),
+            content: const Text(
+                "This item has been turned over. Are you sure you want to edit?"),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close the dialog
+                },
+                child: const Text("Cancel"),
+              ),
+              TextButton(
+                onPressed: () {
+                  // Proceed with saving changes if the user confirms
+                  if (_formKey.currentState!.validate()) {
+                    _formKey.currentState!.save();
+                    _updateTicket(context);
+                  }
+                  Navigator.of(context).pop(); // Close the dialog
+                },
+                child: const Text("Yes, Edit"),
+              ),
+            ],
+          );
+        },
+      );
+    }
+  }
+
   void _updateTicket(BuildContext context) async {
-    print("DateTime before updateTicket: ${_dateTimeController.text}");  // Debugging line
+    print("DateTime before updateTicket: ${_dateTimeController
+        .text}"); // Debugging line
 
     try {
-      await FirebaseFirestore.instance
-          .collection('items')
-          .doc(widget.ticket.id)
-          .update({
-        'name': _name,
-        'description': _description,
-        'fullName': _fullName,
-        'contactNumber': _contactNumber,
-        'email': _email,
-        'location': _location,
-        'status': _status,
-        'imageUrl': _imageUrl,
-        'claimStatus': _claimStatus,
-        'dateTime': _dateTimeController.text, // Save the updated dateTime here
-      });
-      Navigator.of(context).pop();
+      // Ensure widget is still mounted before updating
+      if (mounted) {
+        await FirebaseFirestore.instance
+            .collection('items')
+            .doc(widget.ticket.id)
+            .update({
+          'name': _name,
+          'description': _description,
+          'fullName': _fullName,
+          'contactNumber': _contactNumber,
+          'email': _email,
+          'location': _location,
+          'status': _status,
+          'imageUrl': _imageUrl,
+          'claimStatus': _claimStatus,
+          // Use _claimStatus here to save the updated value
+          'dateTime': _dateTimeController.text,
+          // Save the updated dateTime here
+        });
+        print(_claimStatus);
+        Navigator.of(context).pop(); // Navigate back after update
+      }
     } catch (error) {
       print("Error updating ticket: $error");
     }

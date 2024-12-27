@@ -54,6 +54,8 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
     String? savedFirstName = prefs.getString('user_first_name');
     String? savedLastName = prefs.getString('user_last_name');
     String? savedEmail = prefs.getString('user_email');
+    String? savedNumber = prefs.getString('contact_number');
+
 
     // Set the initial values if they exist
     if (savedFirstName != null && savedLastName != null) {
@@ -62,10 +64,14 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
     if (savedEmail != null) {
       _emailController.text = savedEmail;
     }
+    if (savedNumber != null) {
+      _contactNumberController.text = savedNumber;
+    }
   }
 
 
   // Show Item Type Selection Dialog
+// Show Item Type Selection Dialog
   void _showItemTypeDialog() {
     showDialog(
       context: context,
@@ -76,7 +82,7 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
           children: [
             ListTile(
               title: const Text('Lost'),
-              onTap: () async {
+              onTap: () {
                 setState(() {
                   _itemType = 'lost';
                 });
@@ -99,20 +105,17 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
     );
   }
 
+
   Future<File?> _compressImage(File image) async {
     // Read the image as bytes (Uint8List)
     final Uint8List imageBytes = await image.readAsBytes();
 
     // Compress the image using flutter_image_compress
-    final List<int>? result = await FlutterImageCompress.compressWithList(
+    final List<int> result = await FlutterImageCompress.compressWithList(
       imageBytes,
       minWidth: 400, // Resize width (adjust as needed)
       quality: 50,    // Set the quality (lower for better compression)
     );
-
-    if (result == null) {
-      return null;
-    }
 
     // Convert List<int> result to Uint8List
     final Uint8List compressedBytes = Uint8List.fromList(result);
@@ -160,7 +163,7 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
       return publicUrl;
 
     } catch (e) {
-      print('Error uploading image: $e');
+      // print('Error uploading image: $e');
       // Handle any errors during upload
       return null;
     }
@@ -179,21 +182,21 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
 
       return tempFile;
     } catch (e) {
-      print('Error loading asset image: $e');
+      // print('Error loading asset image: $e');
       return null;
     }
   }
 
-  bool _validateContactNumber(String contactNumber) {
-    // Ensure the contact number is not empty and consists of only digits
-    return contactNumber.isNotEmpty && RegExp(r'^[0-9]+$').hasMatch(contactNumber);
-  }
-
-
-  // Email Validation
-  bool _validateEmail(String email) {
-    return RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(email); // Basic email validation
-  }
+  // bool _validateContactNumber(String contactNumber) {
+  //   // Ensure the contact number is not empty and consists of only digits
+  //   return contactNumber.isNotEmpty && RegExp(r'^[0-9]+$').hasMatch(contactNumber);
+  // }
+  //
+  //
+  // // Email Validation
+  // bool _validateEmail(String email) {
+  //   return RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(email); // Basic email validation
+  // }
 
 
   Future<void> _showOwnershipDialog() async {
@@ -248,6 +251,9 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
     // Validate form fields and show specific warnings
     String missingFields = '';
 
+    if (_itemType.isEmpty) {
+      missingFields += 'Item Type (Lost/Found), ';
+    }
     if (_itemNameController.text.isEmpty) {
       missingFields += 'Item Name, ';
     }
@@ -273,9 +279,7 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
     // Remove trailing comma and space
     if (missingFields.isNotEmpty) {
       missingFields = missingFields.substring(0, missingFields.length - 2);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please fill in the following fields: $missingFields')),
-      );
+      _showTopSnackBar('Please fill in the following fields: $missingFields');
       return;
     }
 
@@ -437,21 +441,34 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
               ),
             ),
           ),
-            Padding(
-              padding: const EdgeInsets.only(top: 16.0),
-              child: ElevatedButton(
-                onPressed: _showItemTypeDialog,
-                style: ButtonStyle(
-                  shape: WidgetStateProperty.all(
-                    RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12), // Optional: Rounded corners
-                      side: const BorderSide(color: Colors.redAccent, width: 2), // Border color and width
-                    ),
+          Padding(
+            padding: const EdgeInsets.only(top: 16.0),
+            child: ElevatedButton(
+              onPressed: _showItemTypeDialog,
+              style: ButtonStyle(
+                backgroundColor: WidgetStateProperty.all(Colors.lightBlueAccent), // Bright color to make it stand out
+                shape: WidgetStateProperty.all(
+                  RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12), // Rounded corners for better look
                   ),
                 ),
-                child: const Text('is Item Lost or Found?'),
+                elevation: WidgetStateProperty.all(8), // Add elevation for a shadow effect
+                padding: WidgetStateProperty.all(
+                  const EdgeInsets.symmetric(vertical: 13.0, horizontal: 24.0), // Larger padding for a bigger button
+                ),
+              ),
+              child: Text(
+                _itemType.isEmpty
+                    ? 'Is Item Lost or Found?'
+                    : 'Selected: ${_itemType[0].toUpperCase()}${_itemType.substring(1)}', // Dynamically show "Lost" or "Found"
+                style: const TextStyle(
+                  fontSize: 15, // Larger text for better readability
+                  fontWeight: FontWeight.bold, // Bold text for more emphasis
+                  color: Colors.white, // White text color for contrast
+                ),
               ),
             ),
+          ),
           Expanded(
             child: TabBarView(
               controller: _tabController,
@@ -506,7 +523,11 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
             }
           }
         },
-        child: const Icon(Icons.save),
+        backgroundColor: Colors.lightBlueAccent, // Set background color for FAB
+        child: const Icon(
+          Icons.save_alt,
+          color: Colors.black, // Set icon color to white
+        ),
       ),
     );
   }

@@ -283,7 +283,7 @@ class HomePage extends StatelessWidget {
             StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('items')
-                  .where('ticket', isNotEqualTo: 'Completed')
+                  .where('ticket', isNotEqualTo: 'success')
                   .orderBy('dateTime', descending: true) // Order by 'dateTime'
                   .limit(6)
                   .snapshots(),

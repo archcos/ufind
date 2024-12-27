@@ -14,7 +14,7 @@ class MessagesListPage extends StatelessWidget {
         .where('participants', arrayContains: userId)
         .snapshots()
         .map((snapshot) => snapshot.docs
-        .map((doc) => {"id": doc.id, ...doc.data() as Map<String, dynamic>})
+        .map((doc) => {"id": doc.id, ...doc.data()})
         .toList());
   }
 
@@ -92,7 +92,7 @@ class MessagesListPage extends StatelessWidget {
     if (nameParts.length > 1) {
       return '${nameParts[0][0]}${nameParts[1][0]}'.toUpperCase();
     } else {
-      return '${nameParts[0][0]}'.toUpperCase(); // Handle case if only first name exists
+      return nameParts[0][0].toUpperCase(); // Handle case if only first name exists
     }
   }
 

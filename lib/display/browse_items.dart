@@ -247,12 +247,12 @@ class _ItemsListPageState extends State<ItemsListPage> {
             ),
           );
         },
-        backgroundColor: Colors.blue, // You can change the color to match your design
-        child: Icon(
+        backgroundColor: Colors.blue,
+        tooltip: 'Add New Ticket', // You can change the color to match your design
+        child: const Icon(
           Icons.add, // You can change the icon to something like a plus sign or a ticket icon
           color: Colors.white,
-        ),
-        tooltip: 'Add New Ticket', // This shows a hint when the user hovers over or taps the button
+        ), // This shows a hint when the user hovers over or taps the button
       ),
     );
   }

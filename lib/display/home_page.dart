@@ -25,23 +25,6 @@ class HomePage extends StatelessWidget {
     Navigator.pushReplacementNamed(context, '/signin');
   }
 
-  Future<int> _getUnreadMessagesCount(String userId) async {
-    try {
-      // Query the Firestore collection for messages where 'userId' matches and 'isRead' is false
-      QuerySnapshot snapshot = await FirebaseFirestore.instance
-          .collection('messages')
-          .where('receiver', isEqualTo: userId)  // Ensure we filter by userId
-          .where('isRead', isEqualTo: false)  // Filter by unread messages (isRead = false)
-          .get();
-
-      // Return the count of unread messages
-      return snapshot.size;
-    } catch (e) {
-      print("Error fetching unread messages: $e");
-      return 0;  // Return 0 if there's an error
-    }
-  }
-
   Stream<int> getUnreads(String userId) {
     return FirebaseFirestore.instance
         .collectionGroup('messages') // Query across all subcollections named 'messages'
@@ -49,17 +32,6 @@ class HomePage extends StatelessWidget {
         .where('isRead', isEqualTo: false)
         .snapshots()
         .map((snapshot) => snapshot.docs.length); // Count unread messages
-  }
-
-
-
-  Stream<int> _getUnreadMessagesCountStream(String userId) {
-    return FirebaseFirestore.instance
-        .collection('messages')
-        .where('receiver', isEqualTo: userId)  // Filter by userId
-        .where('isRead', isEqualTo: false)  // Only unread messages
-        .snapshots()
-        .map((snapshot) => snapshot.size);  // Return the count of unread messages
   }
 
   // Fetch user full name from SharedPreferences
@@ -74,25 +46,6 @@ class HomePage extends StatelessWidget {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? userId = prefs.getString('user_school_id');  // Replace with actual key for userId
     return userId ?? '';  // Return an empty string if no userId found
-  }
-
-  Future<void> _handlePopupMenuSelection(String value, BuildContext context) async {
-    if (value == 'profile') {
-      // Navigate to profile page when profile is selected
-      Navigator.pushNamed(context, '/profile');
-    } else if (value == 'message') {
-      // Fetch the userId and navigate to the message list using Navigator.push()
-      String userId = await _getUserId();
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => MessagesListPage(userId: userId),
-        ),
-      );
-    } else if (value == 'logout') {
-      // Perform logout when logout is selected
-      _logout(context);
-    }
   }
 
   @override
@@ -119,14 +72,12 @@ class HomePage extends StatelessWidget {
               );
             }
 
-            String userId = userIdSnapshot.data!;
-
             // Render the circular avatar as a clickable button
             return GestureDetector(
               onTap: () {
                 Navigator.pushNamed(context, '/profile'); // Redirect to profile
               },
-              child: CircleAvatar(
+              child: const CircleAvatar(
                 radius: 10,
                 backgroundImage: AssetImage('assets/images/profile.jpg'),  // Your profile image
               ),
@@ -522,18 +473,18 @@ class HomePage extends StatelessWidget {
                 child: Stack(
                   clipBehavior: Clip.none, // Ensure the badge doesn't get clipped
                   children: [
-                    Icon(Icons.chat),
+                    const Icon(Icons.chat),
                     if (totalUnreadCount > 0)
                       Positioned(
                         right: -6, // Adjust position to avoid clipping
                         top: -6, // Position the badge above the icon
                         child: Container(
-                          padding: EdgeInsets.all(5),
-                          decoration: BoxDecoration(
+                          padding: const EdgeInsets.all(5),
+                          decoration: const BoxDecoration(
                             color: Colors.red,
                             shape: BoxShape.circle,
                           ),
-                          constraints: BoxConstraints(
+                          constraints: const BoxConstraints(
                             minWidth: 18,
                             minHeight: 18, // Ensure a minimum size for the badge
                           ),

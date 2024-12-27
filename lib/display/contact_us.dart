@@ -51,8 +51,8 @@ class _ContactUsPageState extends State<ContactUsPage> {
       ..text = 'Name: $name\nEmail: $email\nMessage: $message';
 
     try {
-      final sendReport = await send(messageToSend, smtpServer);
-      print('Email sent: ${sendReport.toString()}');
+      await send(messageToSend, smtpServer);
+      // print('Email sent: ${sendReport.toString()}');
 
       // Show a success message
       showDialog(
@@ -74,7 +74,7 @@ class _ContactUsPageState extends State<ContactUsPage> {
         ),
       );
     } catch (e) {
-      print('Error sending email: $e');
+      // print('Error sending email: $e');
 
       // Show an error dialog if email could not be sent
       showDialog(

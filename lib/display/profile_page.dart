@@ -11,11 +11,11 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  TextEditingController _firstNameController = TextEditingController();
-  TextEditingController _lastNameController = TextEditingController();
-  TextEditingController _schoolIdController = TextEditingController();
-  TextEditingController _passwordController = TextEditingController();
-  TextEditingController _contactNumberController = TextEditingController();
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
+  final TextEditingController _schoolIdController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _contactNumberController = TextEditingController();
   String? userId;  // Use String for userId (since it's stored as a document ID)
 
   @override

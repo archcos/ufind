@@ -8,7 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';  // For image selection
 import 'package:supabase_flutter/supabase_flutter.dart';  // For Supabase upload
 import 'package:flutter_image_compress/flutter_image_compress.dart';
-import 'dart:typed_data'; // For Uint8List
+// import 'dart:typed_data'; // For Uint8List
 import 'dart:math';
 import 'package:flutter/services.dart';
 
@@ -126,14 +126,10 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
     return compressedImage;
   }
 
-  // Upload Image to Supabase
   // Upload Image to Supabase with compression
   Future<String?> _uploadImageToSupabase() async {
     // If no image is selected, use the default image from assets
-    if (_selectedImage == null) {
-      // Load the default image from assets
-      _selectedImage = await _loadAssetImage('assets/default_image.png');
-    }
+    _selectedImage ??= await _loadAssetImage('assets/default_image.png');
 
     try {
       // Compress the image before uploading
@@ -481,7 +477,7 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
         ],
       ),
       floatingActionButton: _isLoading
-          ? CircularProgressIndicator() // Show loading indicator if saving
+          ? const CircularProgressIndicator() // Show loading indicator if saving
           : FloatingActionButton(
         onPressed: () async {
           // Prevent multiple clicks by setting the loading state
@@ -572,7 +568,6 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
       padding: const EdgeInsets.all(10.0),
       child: ListView(
         children: [
-
           _buildTextField("Item Name", _itemNameController),
           _buildTextField("Description", _descriptionController),
           GestureDetector(

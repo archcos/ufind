@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'dart:ui';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/ticket_model.dart';
 import 'package:intl/intl.dart'; // Import the intl package for formatting
@@ -217,7 +216,7 @@ class MyTicketPage extends StatelessWidget {
   }
 
   void _showClaimDialog(BuildContext context, Ticket ticket) {
-    final _claimFormKey = GlobalKey<FormState>();
+    final claimFormKey = GlobalKey<FormState>();
     String? claimerId;
     String? description;
     String? claimerName;
@@ -232,7 +231,7 @@ class MyTicketPage extends StatelessWidget {
           title: const Text('Claim Details'),
           content: SingleChildScrollView(  // Add scrollability for content
             child: Form(
-              key: _claimFormKey,
+              key: claimFormKey,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -274,8 +273,8 @@ class MyTicketPage extends StatelessWidget {
             ),
             TextButton(
               onPressed: () {
-                if (_claimFormKey.currentState!.validate()) {
-                  _claimFormKey.currentState!.save();
+                if (claimFormKey.currentState!.validate()) {
+                  claimFormKey.currentState!.save();
                   // Process the claim details
                   _updateTicketWithClaimDetails(
                     ticket,
@@ -314,7 +313,7 @@ class MyTicketPage extends StatelessWidget {
       });
 
     } catch (error) {
-      print("Error updating ticket with claim details: $error");
+      // print("Error updating ticket with claim details: $error");
     }
   }
 
@@ -347,7 +346,7 @@ class MyTicketPage extends StatelessWidget {
     try {
       await FirebaseFirestore.instance.collection('items').doc(ticketId).delete();
     } catch (error) {
-      print("Error deleting ticket: $error");
+      // print("Error deleting ticket: $error");
     }
   }
 }
@@ -389,7 +388,7 @@ class _EditTicketPageState extends State<EditTicketPage> {
   final _claimStatuses = ['keep', 'turnover'];
 
   // String? _dateTime; // Add this to hold the updated dateTime
-  TextEditingController _dateTimeController = TextEditingController();
+  final TextEditingController _dateTimeController = TextEditingController();
 
   // Dropdown options
 
@@ -487,9 +486,9 @@ class _EditTicketPageState extends State<EditTicketPage> {
                             _dateTimeController.text =
                                 DateFormat('yyyy-MM-dd hh:mm').format(dateTime);
                           });
-                          print(
-                              "Updated dateTime in onTap: ${_dateTimeController
-                                  .text}");
+                          // print(
+                          //     "Updated dateTime in onTap: ${_dateTimeController
+                          //         .text}");
                         }
                       }
                     }
@@ -673,8 +672,8 @@ class _EditTicketPageState extends State<EditTicketPage> {
   }
 
   void _updateTicket(BuildContext context) async {
-    print("DateTime before updateTicket: ${_dateTimeController
-        .text}"); // Debugging line
+    // print("DateTime before updateTicket: ${_dateTimeController
+    //     .text}"); // Debugging line
 
     try {
       // Ensure widget is still mounted before updating
@@ -696,11 +695,11 @@ class _EditTicketPageState extends State<EditTicketPage> {
           'dateTime': _dateTimeController.text,
           // Save the updated dateTime here
         });
-        print(_claimStatus);
+        // print(_claimStatus);
         Navigator.of(context).pop(); // Navigate back after update
       }
     } catch (error) {
-      print("Error updating ticket: $error");
+      // print("Error updating ticket: $error");
     }
   }
 }

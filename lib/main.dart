@@ -7,7 +7,7 @@ import 'package:untitled/display/browse_items.dart';
 import 'package:untitled/display/create_ticket.dart';
 import 'package:untitled/display/contact_us.dart';
 import 'package:untitled/display/home_page.dart';
-import 'package:untitled/display/landing-page.dart';
+import 'package:untitled/display/landing_page.dart';
 import 'package:untitled/display/message_list.dart';
 import 'package:untitled/display/my_ticket.dart';
 import 'package:untitled/display/profile_page.dart';
@@ -32,18 +32,12 @@ Future<void> _initializeNotifications(BuildContext context) async {
   await flutterLocalNotificationsPlugin.initialize(initializationSettings);
 
   // Request notification permission for Android 13 and higher
-  PermissionStatus status = await Permission.notification.request();
-  if (status.isGranted) {
-    print("Notification permission granted");
-  } else {
-    print("Notification permission denied");
-  }
+  await Permission.notification.request();
 
   // Register notification tap handling
   flutterLocalNotificationsPlugin
       .initialize(initializationSettings, onDidReceiveNotificationResponse: (response) {
     if (response.payload != null) {
-      print('Notification tapped with payload: ${response.payload}');
       _onSelectNotification(context, response.payload);
     }
   });
@@ -56,15 +50,12 @@ Future<String?> _getSchoolId() async {
 
 Future<void> _onSelectNotification(BuildContext context, String? payload) async {
   if (payload != null) {
-    print('Notification payload: $payload');
     if (payload == 'unread_messages') {
       String? userId = await _getSchoolId();
       if (userId != null) {
         navigatorKey.currentState?.push(
           MaterialPageRoute(builder: (context) => MessagesListPage(userId: userId)),
         );
-      } else {
-        print('User ID is null');
       }
     }
   }
@@ -118,7 +109,6 @@ Future<void> _showNotification(int unreadCount) async {
 
 
 void backgroundFetchHeadlessTask(HeadlessTask task) async {
-  print('[BackgroundFetch] Headless task: ${task.taskId}');
   await fetchUnreadMessages();
   BackgroundFetch.finish(task.taskId);
 }
@@ -132,12 +122,10 @@ void _configureBackgroundFetch() async {
       startOnBoot: true// Enable headless mode
     ),
         (String taskId) async {
-      print("[BackgroundFetch] Event received: $taskId");
       await fetchUnreadMessages(); // Your function to fetch messages and show notifications
       BackgroundFetch.finish(taskId);
     },
         (String taskId) async {
-      print("[BackgroundFetch] Task failed: $taskId");
       BackgroundFetch.finish(taskId);
     },
   );
@@ -149,7 +137,7 @@ Future<void> main() async {
   await Firebase.initializeApp();
   await Supabase.initialize(
     url: 'https://tqvgagdffmjtxswldtgm.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxdmdhZ2RmZm1qdHhzd2xkdGdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzI3MTExMTgsImV4cCI6MjA0ODI4NzExOH0.nf0tUCRt36slpg5H-f7FUQEdrU3FUe5KNtQoX56xHXY',  // Replace with your Supabase anon key
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxdmdhZ2RmZm1qdHhzd2xkdGdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzI3MTExMTgsImV4cCI6MjA0ODI4NzExOH0.nf0tUCRt36slpg5H-f7FUQEdrU3FUe5KNtQoX56xHXY',
   );
   await BackgroundFetch.registerHeadlessTask(backgroundFetchHeadlessTask);
   _configureBackgroundFetch();
@@ -177,11 +165,11 @@ class MyApp extends StatelessWidget {
       routes: {
         '/': (context) => const SplashScreen(),
         '/homepage': (context) => HomePage(),
-        '/signin': (context) => SigninPage(),
+        '/signin': (context) => const SigninPage(),
         '/registration': (context) => RegistrationPage(),
-        '/profile': (context) => ProfilePage(),
-        '/about-us': (context) => AboutUsPage(),
-        '/contact-us': (context) => ContactUsPage(),
+        '/profile': (context) => const ProfilePage(),
+        '/about-us': (context) => const AboutUsPage(),
+        '/contact-us': (context) => const ContactUsPage(),
         '/create-ticket': (context) => TicketDetailsPage(),
         '/browse-items': (context) => ItemsListPage(),
         '/my-tickets': (context) => MyTicketPage(),
@@ -193,7 +181,6 @@ class MyApp extends StatelessWidget {
     const interval = Duration(minutes: 1); // Adjust the duration as needed
 
     Timer.periodic(interval, (timer) async {
-      print('Timer triggered at: ${DateTime.now()}');
       await fetchUnreadMessages(); // Call the fetchUnreadMessages function
     });
   }

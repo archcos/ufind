@@ -111,36 +111,6 @@ class AuthService {
     return user?.email ?? '';
   }
 
-  // Update the email in Firebase Authentication
-  Future<void> updateEmail(String newEmail) async {
-    try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        // Send verification email to the new email
-        await user.verifyBeforeUpdateEmail(newEmail);
-        await user.reload();
-
-        print("Verification email sent. Please verify the new email.");
-      } else {
-        print("No user signed in.");
-      }
-    } catch (e) {
-      print("Error updating email: $e");
-      throw Exception("Failed to update email: $e");
-    }
-  }
-
-
-
-  Future<void> printCurrentUserEmail() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      print('Current user email: ${user.email}');
-    } else {
-      print('No user is signed in');
-    }
-  }
-
   Future<bool> updateProfile(String schoolId, String firstName, String lastName, String contactNumber, String password) async {
     try {
       // Prepare user data for update
@@ -169,10 +139,8 @@ class AuthService {
       await prefs.setString('contact_number', contactNumber);
       await prefs.setString('user_school_id', schoolId);
 
-      print("Profile updated successfully!");
       return true;
     } catch (e) {
-      print("Error updating profile: $e");
       return false;
     }
   }
@@ -181,6 +149,4 @@ class AuthService {
     final random = List<int>.generate(16, (i) => DateTime.now().microsecond % 256);
     return base64Url.encode(random);
   }
-
-
 }

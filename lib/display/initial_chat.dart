@@ -29,7 +29,7 @@ class _InitialChatPageState extends State<InitialChatPage> {
   Future<void> sendMessage(String senderId, String receiverId,
       String message) async {
     final timestamp = FieldValue.serverTimestamp();
-    final isRead = false;
+    const isRead = false;
 
     final documentId = getChatDocumentId();
     final chatDocRef = FirebaseFirestore.instance.collection('chats').doc(
@@ -59,7 +59,7 @@ class _InitialChatPageState extends State<InitialChatPage> {
     final chatRef = FirebaseFirestore.instance.collection('chats').doc(
         documentId).collection('messages');
     return chatRef.orderBy('timestamp').snapshots().map((snapshot) {
-      return snapshot.docs.map((doc) => doc.data() as Map<String, dynamic>)
+      return snapshot.docs.map((doc) => doc.data())
           .toList();
     });
   }

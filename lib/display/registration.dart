@@ -47,7 +47,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
     });
 
     try {
-      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+       await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );

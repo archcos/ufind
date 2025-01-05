@@ -139,7 +139,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
               const SizedBox(height: 10),
               _buildTextField(_schoolIdController, 'School ID', Icons.school, isNumber: true),
               const SizedBox(height: 10),
-              _buildTextField(_contactNumberController, 'Contact Number', Icons.phone, isNumber: true),
+              _buildTextField(_contactNumberController, 'Contact Number', Icons.phone),
               const SizedBox(height: 10),
               _buildTextField(_emailController, 'Email', Icons.email),
               const SizedBox(height: 10),

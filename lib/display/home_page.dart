@@ -219,6 +219,17 @@ class HomePage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
+            const Center(
+              child: Text(
+                "TIPS: Please Check Recent Items to know if the item you Found/Lost has been already posted before creating a ticket.",
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.red,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 20),
               child: Text(
@@ -389,28 +400,6 @@ class HomePage extends StatelessWidget {
                       ),
                     ),
 
-                    // Create Ticket Button
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.pushNamed(context, '/create-ticket');
-                      },
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
-                        backgroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
-                          side: const BorderSide(
-                            color: Colors.black54, // Border color
-                            width: 1, // Border width
-                          ),
-                        ),
-                      ),
-                      icon: const Icon(Icons.add_outlined, color: Colors.black54),
-                      label: const Text(
-                        'Create Ticket',
-                        style: TextStyle(fontSize: 12),
-                      ),
-                    ),
                   ],
                 ),
               ),

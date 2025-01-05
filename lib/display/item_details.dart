@@ -133,7 +133,7 @@ class ItemDetailsPage extends StatelessWidget {
                           MaterialPageRoute(
                             builder: (context) => InitialChatPage(
                               userId: senderId,
-                              receiverId: ticket.id,
+                              receiverId: ticket.id.toString().substring(0, 10),  // Extract the first 10 digits
                               itemType: ticket.status,
                             ),
                           ),

@@ -103,7 +103,7 @@ class ItemDetailsPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(30), // Rounded corners
                   ),
                   child: const Text(
-                    'This item has been turned over to OSA, Please visit their office provided below.',
+                    'This item has been turned over to the Guard/OSA, Please visit their location.',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -155,9 +155,9 @@ class ItemDetailsPage extends StatelessWidget {
                     ),
                     minimumSize: const Size(40, 30), // Minimum size of the button
                   ),
-                  child: const Text(
-                    'Chat Now',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                  child: Text(
+                    ticket.status == 'lost' ? 'Contact Me' : 'Claim Now',
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),

@@ -202,7 +202,7 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
       builder: (context) => AlertDialog(
         title: const Text('Keep/Turnover'),
         content: const Text(
-            'Are you going to keep the item and give it yourself, or turn it over to OSA?'),
+            'Are you going to keep the item and give it yourself, or turn it over to Entrance Security Guard/OSA?'),
         actions: [
           TextButton(
             onPressed: () {
@@ -219,7 +219,7 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
               setState(() {
                 _status = 'TurnOver'; // Set status to 'Turnover'
                 // Automatically set the contact details for 'TurnOver'
-                _contactNameController.text = 'Office of Students Affair';
+                _contactNameController.text = 'Entrance Security Guard/Office of Students Affair';
                 _contactNumberController.text = '09123456789';
                 _emailController.text = 'osa@gmail.com';
               });
@@ -305,8 +305,12 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Ticket Saved Successfully!')),
+      const SnackBar(content: Text('Ticket Submitted Successfully!')),
     );
+
+    if (context.mounted) {
+      Navigator.pop(context);
+    }
   }
 
 
@@ -474,56 +478,8 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
               ],
             ),
           ),
+
         ],
-      ),
-      floatingActionButton: _isLoading
-          ? const CircularProgressIndicator() // Show loading indicator if saving
-          : FloatingActionButton(
-        onPressed: () async {
-          // Prevent multiple clicks by setting the loading state
-          setState(() {
-            _isLoading = true;
-          });
-
-          try {
-            // Upload image to Supabase first and get the image URL
-            final imageUrl = await _uploadImageToSupabase();
-
-            // Check if the image upload was successful
-            if (imageUrl != null) {
-              setState(() {
-                _imageUrl = imageUrl; // Set the image URL after successful upload
-              });
-
-              // Proceed to save the ticket details to Firebase
-              await _saveToFirebase();
-
-              // After saving successfully, show success message
-            } else {
-              // If image upload fails, show an error message
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Image upload failed. Please try again.')),
-              );
-            }
-          } catch (e) {
-            // If there is an error, show the error message
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('An error occurred: $e')),
-            );
-          } finally {
-            // Reset the loading state, whether success or failure
-            if (mounted) {
-              setState(() {
-                _isLoading = false;
-              });
-            }
-          }
-        },
-        backgroundColor: Colors.lightBlueAccent, // Set background color for FAB
-        child: const Icon(
-          Icons.save_alt,
-          color: Colors.black, // Set icon color to white
-        ),
       ),
     );
   }
@@ -632,7 +588,70 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black), // Text styling
             ),
           ),
+          const SizedBox(height: 15),
+          Center(
+            child: _isLoading
+                ? const CircularProgressIndicator() // Show loading indicator if saving
+                : ElevatedButton(
+              onPressed: () async {
+                // Prevent multiple clicks by setting the loading state
+                setState(() {
+                  _isLoading = true;
+                });
 
+                try {
+                  // Upload image to Supabase first and get the image URL
+                  final imageUrl = await _uploadImageToSupabase();
+
+                  // Check if the image upload was successful
+                  if (imageUrl != null) {
+                    setState(() {
+                      _imageUrl = imageUrl; // Set the image URL after successful upload
+                    });
+
+                    // Proceed to save the ticket details to Firebase
+                    await _saveToFirebase();
+
+                  } else {
+                    // If image upload fails, show an error message
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Image upload failed. Please try again.')),
+                    );
+                  }
+                } catch (e) {
+                  // If there is an error, show the error message
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('An error occurred: $e')),
+                  );
+                } finally {
+                  // Reset the loading state, whether success or failure
+                  if (mounted) {
+                    setState(() {
+                      _isLoading = false;
+                    });
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.lightBlueAccent, // Set background color
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), // Add padding
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8), // Rounded corners
+                ),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.send_and_archive_rounded, color: Colors.black), // Add icon
+                  SizedBox(width: 8), // Add spacing between icon and text
+                  Text(
+                    "Submit Ticket",
+                    style: TextStyle(color: Colors.black), // Set text color
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -656,6 +675,70 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
             ),
           ),
           _buildTextField("Email", _emailController, placeholder: "Enter your email"),
+          const SizedBox(height: 20),
+          Center(
+            child: _isLoading
+                ? const CircularProgressIndicator() // Show loading indicator if saving
+                : ElevatedButton(
+              onPressed: () async {
+                // Prevent multiple clicks by setting the loading state
+                setState(() {
+                  _isLoading = true;
+                });
+
+                try {
+                  // Upload image to Supabase first and get the image URL
+                  final imageUrl = await _uploadImageToSupabase();
+
+                  // Check if the image upload was successful
+                  if (imageUrl != null) {
+                    setState(() {
+                      _imageUrl = imageUrl; // Set the image URL after successful upload
+                    });
+
+                    // Proceed to save the ticket details to Firebase
+                    await _saveToFirebase();
+
+                  } else {
+                    // If image upload fails, show an error message
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Image upload failed. Please try again.')),
+                    );
+                  }
+                } catch (e) {
+                  // If there is an error, show the error message
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('An error occurred: $e')),
+                  );
+                } finally {
+                  // Reset the loading state, whether success or failure
+                  if (mounted) {
+                    setState(() {
+                      _isLoading = false;
+                    });
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.lightBlueAccent, // Set background color
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), // Add padding
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8), // Rounded corners
+                ),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.send_and_archive_rounded, color: Colors.black), // Add icon
+                  SizedBox(width: 8), // Add spacing between icon and text
+                  Text(
+                    "Submit Ticket",
+                    style: TextStyle(color: Colors.black), // Set text color
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );

@@ -38,7 +38,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
     }
 
     if (schoolId.length != 10) {
-      _showMessage('School ID must be exactly 10 digits.');
+      _showMessage('Student ID must be exactly 10 digits.');
       return;
     }
 
@@ -55,7 +55,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
       DocumentSnapshot existingDoc = await FirebaseFirestore.instance.collection('users').doc(schoolId).get();
 
       if (existingDoc.exists) {
-        _showMessage('A user with this School ID already exists.');
+        _showMessage('A user with this Student ID already exists.');
         setState(() {
           _isRegistering = false;
         });
@@ -74,7 +74,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
         'salt': salt,
       });
 
-      _showMessage('Registration Successful! Please login now with your school ID');
+      _showMessage('Registration Successful! Please login now with your Student ID');
       Navigator.pushReplacementNamed(context, '/');
     } catch (e) {
       _showMessage('Registration failed: $e');
@@ -103,72 +103,98 @@ class _RegistrationPageState extends State<RegistrationPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.lightBlueAccent, Colors.lightBlue],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.lightBlueAccent, Colors.lightBlue],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const SizedBox(height: 50),
-              Image.asset(
-                'assets/images/logo.png',
-                width: 120,
-                height: 120,
-                fit: BoxFit.cover,
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'U-FIND Registration',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 30),
-              _buildTextField(_firstNameController, 'First Name', Icons.person),
-              const SizedBox(height: 10),
-              _buildTextField(_lastNameController, 'Last Name', Icons.person),
-              const SizedBox(height: 10),
-              _buildTextField(_schoolIdController, 'School ID', Icons.school, isNumber: true),
-              const SizedBox(height: 10),
-              _buildTextField(_contactNumberController, 'Contact Number', Icons.phone),
-              const SizedBox(height: 10),
-              _buildTextField(_emailController, 'Email', Icons.email),
-              const SizedBox(height: 10),
-              _buildPasswordField(),
-              const SizedBox(height: 30),
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                width: _isRegistering ? 60 : MediaQuery.of(context).size.width * 0.8,
-                height: 60,
-                child: ElevatedButton(
-                  onPressed: _handleRegister,
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.blue,
-                    backgroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(_isRegistering ? 30 : 10),
+        ),
+        child: SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: MediaQuery.of(context).size.height, // Ensures full-screen height
+            ),
+            child: IntrinsicHeight(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const SizedBox(height: 50),
+                    Image.asset(
+                      'assets/images/logo.png',
+                      width: 120,
+                      height: 120,
+                      fit: BoxFit.cover,
                     ),
-                  ),
-                  child: _isRegistering
-                      ? const CircularProgressIndicator(color: Colors.blue)
-                      : const Text('Register', style: TextStyle(fontSize: 16)),
+                    const SizedBox(height: 20),
+                    const Text(
+                      'U-FIND Registration',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+                    _buildTextField(_firstNameController, 'First Name', Icons.person),
+                    const SizedBox(height: 10),
+                    _buildTextField(_lastNameController, 'Last Name', Icons.person),
+                    const SizedBox(height: 10),
+                    _buildTextField(_schoolIdController, 'Student ID', Icons.school, isNumber: true),
+                    const SizedBox(height: 10),
+                    _buildTextField(_contactNumberController, 'Contact Number', Icons.phone),
+                    const SizedBox(height: 10),
+                    _buildTextField(_emailController, 'Email', Icons.email),
+                    const SizedBox(height: 10),
+                    _buildPasswordField(),
+                    const SizedBox(height: 20),
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      width: _isRegistering ? 60 : MediaQuery.of(context).size.width * 0.8,
+                      height: 60,
+                      child: ElevatedButton(
+                        onPressed: _handleRegister,
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: Colors.blue,
+                          backgroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(_isRegistering ? 30 : 10),
+                          ),
+                        ),
+                        child: _isRegistering
+                            ? const CircularProgressIndicator(color: Colors.blue)
+                            : const Text('Register', style: TextStyle(fontSize: 16)),
+                      ),
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text(
+                          "Already have an account?",
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pushReplacementNamed(context, '/signin');
+                          },
+                          child: const Text('Sign in', style: TextStyle(color: Colors.white)),
+                        ),
+                      ],
+                    ),
+                    const Spacer(), // Push content to fill available space
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
+
 
   Widget _buildTextField(TextEditingController controller, String hintText, IconData icon, {bool isPassword = false, bool isNumber = false}) {
     return TextField(

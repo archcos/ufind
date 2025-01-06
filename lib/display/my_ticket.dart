@@ -6,7 +6,6 @@ import '../models/ticket_model.dart';
 import 'package:intl/intl.dart'; // Import the intl package for formatting
 
 class MyTicketPage extends StatelessWidget {
-
   Future<String?> _getSchoolId() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getString('user_school_id');
@@ -14,7 +13,6 @@ class MyTicketPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       appBar: AppBar(
         title: const Text("My Tickets"),
@@ -35,10 +33,18 @@ class MyTicketPage extends StatelessWidget {
                 return const Center(child: CircularProgressIndicator());
               }
 
+              // Filter tickets
               final tickets = snapshot.data!.docs
                   .where((doc) {
                 final uid = doc.id.substring(0, 10);
-                return uid == schoolId;
+                print(schoolId);
+                // Filter for specific user ID or other users
+                if (schoolId == '1234567890') {
+                  print(doc['claimStatus']);
+                  return uid == schoolId || doc['claimStatus'] == 'turnover';
+                } else {
+                  return uid == schoolId;
+                }
               })
                   .map((doc) => Ticket.fromDocument(doc))
                   .toList();
@@ -70,8 +76,10 @@ class MyTicketPage extends StatelessWidget {
                               child: CachedNetworkImage(
                                 imageUrl: ticket.imageUrl,
                                 fit: BoxFit.cover,
-                                placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
-                                errorWidget: (context, url, error) => const Icon(Icons.error, color: Colors.red),
+                                placeholder: (context, url) =>
+                                const Center(child: CircularProgressIndicator()),
+                                errorWidget: (context, url, error) =>
+                                const Icon(Icons.error, color: Colors.red),
                               ),
                             ),
                           ),
@@ -111,63 +119,54 @@ class MyTicketPage extends StatelessWidget {
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
-                                    // Conditionally display the Edit and Delete buttons only if the status is not 'Completed'
-                                    // Show the edit button when ticket is not 'success' and claimStatus is 'turnover'
                                     if (ticket.ticket != 'success') ...[
-                                      // Show edit button
                                       IconButton(
                                         icon: const Icon(Icons.edit, color: Colors.blue),
                                         onPressed: () {
                                           Navigator.push(
                                             context,
                                             MaterialPageRoute(
-                                              builder: (context) => EditTicketPage(ticket: ticket),
+                                              builder: (context) =>
+                                                  EditTicketPage(ticket: ticket),
                                             ),
                                           );
                                         },
                                       ),
-
-                                      // Show delete button only if claimStatus is not 'turnover'
-                                      if (ticket.claimStatus != 'turnover') ...[
-                                        IconButton(
-                                          icon: const Icon(Icons.delete, color: Colors.red),
-                                          onPressed: () {
-                                            _confirmDelete(context, ticket);
-                                          },
-                                        ),
-                                      ],
                                     ],
-
-
                                   ],
                                 ),
-                                // New "Mark as Completed" button below the icons
                                 Center(
                                   child: TextButton(
-                                    // Enable the button only if the ticket is 'pending' and the claimStatus is not 'turnover'
-                                    onPressed: ticket.claimStatus == 'turnover'
-                                        ? null // Disable the button if claimStatus is 'turnover'
-                                        : ticket.ticket == 'pending'
+                                    onPressed: (schoolId == '1234567890' &&
+                                        ticket.claimStatus == 'turnover' &&
+                                        ticket.ticket != 'success') ||
+                                        (ticket.claimStatus != 'turnover' && ticket.ticket == 'pending')
                                         ? () {
                                       _showCompletionDialog(context, ticket);
                                     }
-                                        : null, // Disable if ticket is not 'pending'
+                                        : null, // Disable the button if conditions are not met
                                     style: TextButton.styleFrom(
                                       foregroundColor: Colors.white,
-                                      backgroundColor: ticket.claimStatus == 'turnover' // Disable background color if 'turnover'
-                                          ? Colors.grey // Grey color for disabled button
+                                      backgroundColor: schoolId == '1234567890' &&
+                                          ticket.claimStatus == 'turnover' &&
+                                          ticket.ticket != 'success'
+                                          ? Colors.blue // Active "Mark as Completed" for turnover tickets
+                                          : ticket.claimStatus == 'turnover'
+                                          ? Colors.green // Disabled "Turned Over"
                                           : ticket.ticket == 'pending'
-                                          ? Colors.red // Red color for "Mark as Completed"
-                                          : Colors.green, // Green for "Completed"
+                                          ? Colors.red // Active "Mark as Completed"
+                                          : Colors.green, // Disabled "Completed"
                                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                     ),
                                     child: Text(
-                                      ticket.claimStatus == 'turnover'
-                                          ? "Turned Over" // Show "Turned Over" if claimStatus is 'turnover'
-                                          : (ticket.ticket == 'pending' ? "Mark as Completed" : "Completed"), // Show text based on ticket status
+                                      schoolId == '1234567890' && ticket.claimStatus == 'turnover'
+                                          ? (ticket.ticket == 'pending' ? "Mark as Completed" : "Completed") // For turnover tickets
+                                          : ticket.claimStatus == 'turnover'
+                                          ? "Turned Over" // Default for non-1234567890 users
+                                          : (ticket.ticket == 'pending' ? "Mark as Completed" : "Completed"), // Other cases
                                       style: const TextStyle(fontSize: 10),
                                     ),
                                   ),
@@ -187,6 +186,8 @@ class MyTicketPage extends StatelessWidget {
       ),
     );
   }
+
+
 
   void _showCompletionDialog(BuildContext context, Ticket ticket) {
     showDialog(

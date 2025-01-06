@@ -50,7 +50,7 @@ class _SigninPageState extends State<SigninPage> {
     final password = _passwordController.text.trim();
 
     if (schoolId.isEmpty || password.isEmpty) {
-      _showMessage('Please enter both school ID and password.');
+      _showMessage('Please enter both Student ID and password.');
       setState(() {
         _isLoading = false;
       });
@@ -128,7 +128,7 @@ class _SigninPageState extends State<SigninPage> {
               decoration: InputDecoration(
                 filled: true,
                 fillColor: Colors.white,
-                hintText: 'School ID',
+                hintText: 'Student ID',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                   borderSide: BorderSide.none,

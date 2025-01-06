@@ -65,9 +65,12 @@ class HomePage extends StatelessWidget {
                 onTap: () {
                   Navigator.pushNamed(context, '/profile'); // Redirect to profile
                 },
-                child: const CircleAvatar(
-                  radius: 10,
-                  backgroundImage: AssetImage('assets/images/profile.jpg'), // Placeholder profile image
+                child: IconButton(
+                  icon: const Icon(Icons.account_circle),  // Profile icon
+                  iconSize: 30,                      // Adjust the size as needed
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/profile'); // Redirect to profile
+                  },
                 ),
               );
             }
@@ -77,9 +80,12 @@ class HomePage extends StatelessWidget {
               onTap: () {
                 Navigator.pushNamed(context, '/profile'); // Redirect to profile
               },
-              child: const CircleAvatar(
-                radius: 10,
-                backgroundImage: AssetImage('assets/images/profile.jpg'),  // Your profile image
+              child: IconButton(
+                icon: const Icon(Icons.account_circle_rounded ),  // Profile icon
+                iconSize: 30,                      // Adjust the size as needed
+                onPressed: () {
+                  Navigator.pushNamed(context, '/profile'); // Redirect to profile
+                },
               ),
             );
           },
@@ -219,16 +225,18 @@ class HomePage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-            const Center(
+            const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 15),
+            child:  Center(
               child: Text(
-                "TIPS: Please Check Recent Items to know if the item you Found/Lost has been already posted before creating a ticket.",
-                style: TextStyle(
+                  "TIP: Before creating a ticket, please check Recent Items to see if the item you lost or found has already been posted.",                style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
                   color: Colors.red,
                 ),
                 textAlign: TextAlign.center,
               ),
+            ),
             ),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 20),

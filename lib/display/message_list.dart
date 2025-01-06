@@ -112,105 +112,169 @@ class MessagesListPage extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text("No conversations yet.", style: TextStyle(fontSize: 18, color: Colors.grey)));
+            return const Center(
+                child: Text(
+                  "No conversations yet.",
+                  style: TextStyle(fontSize: 18, color: Colors.grey),
+                ));
           }
 
+          // Fetch chats
           final chats = snapshot.data!;
-          return ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            itemCount: chats.length,
-            itemBuilder: (context, index) {
-              final chat = chats[index];
 
-              return StreamBuilder<Map<String, dynamic>>(
-                stream: getChatmateInfo(chat['id'], userId),
-                builder: (context, nameSnapshot) {
-                  if (nameSnapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
+          // Fetch last message for sorting
+          return FutureBuilder<List<Map<String, dynamic>>>(
+            future: Future.wait(chats.map((chat) async {
+              final lastMessage = await getLastMessage(chat['id']).first;
+              return {
+                ...chat,
+                'lastMessageTimestamp': lastMessage?['timestamp'],
+              };
+            })),
+            builder: (context, sortedSnapshot) {
+              if (sortedSnapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-                  final chatmateName = nameSnapshot.data?['fullName'] ?? "Unknown User";
-                  // final chatmateId = nameSnapshot.data?['id'] ?? "Unknown ID";
-                  final chatmateInitials = getInitials(chatmateName);
+              if (sortedSnapshot.hasError || !sortedSnapshot.hasData) {
+                return const Center(
+                    child: Text(
+                      "Error loading chats.",
+                      style: TextStyle(fontSize: 18, color: Colors.grey),
+                    ));
+              }
 
-                  return StreamBuilder<Map<String, dynamic>?>(
-                    stream: getLastMessage(chat['id']),
-                    builder: (context, lastMessageSnapshot) {
-                      String lastMessage = "No messages yet";
-                      String lastTime = "Pending...";
+              // Sort chats based on last message timestamp
+              final sortedChats = sortedSnapshot.data!;
+              sortedChats.sort((a, b) {
+                final aTimestamp = a['lastMessageTimestamp'] as Timestamp?;
+                final bTimestamp = b['lastMessageTimestamp'] as Timestamp?;
+                if (aTimestamp == null || bTimestamp == null) {
+                  return 0; // If timestamp is missing, keep order
+                }
+                return bTimestamp.compareTo(aTimestamp); // Descending order
+              });
 
-                      if (lastMessageSnapshot.hasData) {
-                        final message = lastMessageSnapshot.data!;
-                        lastMessage = message['content'] ?? "No messages";
-                        lastTime = formatTimestamp(message['timestamp'] as Timestamp?);
+              // Build ListView with sorted chats
+              return ListView.builder(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                itemCount: sortedChats.length,
+                itemBuilder: (context, index) {
+                  final chat = sortedChats[index];
+
+                  return StreamBuilder<Map<String, dynamic>>(
+                    stream: getChatmateInfo(chat['id'], userId),
+                    builder: (context, nameSnapshot) {
+                      if (nameSnapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
                       }
+                      final chatmateName =
+                          nameSnapshot.data?['fullName'] ?? "Unknown User";
+                      final chatmateId = nameSnapshot.data?['id'] ?? "Unknown ID";
+                      final chatmateInitials = getInitials(chatmateName);
 
-                      return StreamBuilder<int>(
-                        stream: getUnreadCount(chat['id'], userId),
-                        builder: (context, unreadSnapshot) {
-                          final unreadCount = unreadSnapshot.data ?? 0;
+                      return StreamBuilder<Map<String, dynamic>?>(
+                        stream: getLastMessage(chat['id']),
+                        builder: (context, lastMessageSnapshot) {
+                          String lastMessage = "No messages yet";
+                          String lastTime = "Pending...";
 
-                          return Card(
-                            margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                            elevation: 3,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            child: ListTile(
-                              leading: CircleAvatar(
-                                backgroundColor: Colors.blueAccent,
-                                child: Text(
-                                  chatmateInitials,
-                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                              title: Text(
-                                chatmateName,
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                              ),
-                              subtitle: Row(
-                                children: [
-                                  Expanded(
+                          if (lastMessageSnapshot.hasData) {
+                            final message = lastMessageSnapshot.data!;
+                            lastMessage = message['content'] ?? "No messages";
+                            lastTime = formatTimestamp(
+                                message['timestamp'] as Timestamp?);
+                          }
+
+                          return StreamBuilder<int>(
+                            stream: getUnreadCount(chat['id'], userId),
+                            builder: (context, unreadSnapshot) {
+                              final unreadCount = unreadSnapshot.data ?? 0;
+
+                              return Card(
+                                margin: const EdgeInsets.symmetric(
+                                    vertical: 5, horizontal: 10),
+                                elevation: 3,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                                child: ListTile(
+                                  leading: CircleAvatar(
+                                    backgroundColor: Colors.blueAccent,
                                     child: Text(
-                                      unreadCount > 0
-                                          ? "$lastMessage ($unreadCount unread)"
-                                          : lastMessage,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(fontSize: 14, color: Colors.black54),
+                                      chatmateInitials,
+                                      style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold),
                                     ),
                                   ),
-                                  Text(
-                                    lastTime,
-                                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                  title: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          chatmateName,
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      Text(
+                                        '($chatmateId)',
+                                        style: const TextStyle(
+                                            fontSize: 14, color: Colors.grey),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
                                   ),
-                                ],
-                              ),
-                              trailing: unreadCount > 0
-                                  ? CircleAvatar(
-                                radius: 12,
-                                backgroundColor: Colors.red,
-                                child: Text(
-                                  unreadCount.toString(),
-                                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                                  subtitle: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          unreadCount > 0
+                                              ? "$lastMessage ($unreadCount unread)"
+                                              : lastMessage,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                              fontSize: 14, color: Colors.black54),
+                                        ),
+                                      ),
+                                      Text(
+                                        lastTime,
+                                        style: const TextStyle(
+                                            fontSize: 12, color: Colors.grey),
+                                      ),
+                                    ],
+                                  ),
+                                  trailing: unreadCount > 0
+                                      ? CircleAvatar(
+                                    radius: 12,
+                                    backgroundColor: Colors.red,
+                                    child: Text(
+                                      unreadCount.toString(),
+                                      style: const TextStyle(
+                                          color: Colors.white, fontSize: 12),
+                                    ),
+                                  )
+                                      : null,
+                                  onTap: () async {
+                                    await markMessagesAsRead(chat['id'], userId);
+
+                                    final receiverId = chat['participants']
+                                        .firstWhere((id) => id != userId);
+
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => ChatScreen(
+                                          userId: userId,
+                                          receiverId: receiverId,
+                                        ),
+                                      ),
+                                    );
+                                  },
                                 ),
-                              )
-                                  : null,
-                              onTap: () async {
-                                // Mark messages as read when opening the chat
-                                await markMessagesAsRead(chat['id'], userId);
-
-                                final receiverId = chat['participants']
-                                    .firstWhere((id) => id != userId);
-
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => ChatScreen(
-                                      userId: userId,
-                                      receiverId: receiverId,
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
+                              );
+                            },
                           );
                         },
                       );

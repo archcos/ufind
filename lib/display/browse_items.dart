@@ -305,15 +305,31 @@ class _ItemsListPageState extends State<ItemsListPage> with SingleTickerProvider
                               ),
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(8),
-                                child: CachedNetworkImage(
-                                  imageUrl: ticket.imageUrl,
-                                  fit: BoxFit.cover,
-                                  height: double.infinity,
-                                  width: double.infinity,
-                                  placeholder: (context, url) =>
-                                  const Center(child: CircularProgressIndicator()),
-                                  errorWidget: (context, url, error) =>
-                                  const Icon(Icons.error, color: Colors.red),
+                                child: Stack(
+                                  children: [
+                                    CachedNetworkImage(
+                                      imageUrl: ticket.imageUrl,
+                                      fit: BoxFit.cover,
+                                      height: double.infinity,
+                                      width: double.infinity,
+                                      placeholder: (context, url) =>
+                                      const Center(child: CircularProgressIndicator()),
+                                      errorWidget: (context, url, error) =>
+                                      const Icon(Icons.error, color: Colors.red),
+                                    ),
+                                    if (ticket.status == 'found') // Apply blur only for found items
+                                      Positioned.fill(
+                                        child: ClipRRect(
+                                          borderRadius: BorderRadius.circular(8),
+                                          child: BackdropFilter(
+                                            filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                                            child: Container(
+                                              color: Colors.black.withOpacity(0.7),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
                                 ),
                               ),
                             ),

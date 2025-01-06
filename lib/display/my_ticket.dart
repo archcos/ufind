@@ -37,10 +37,8 @@ class MyTicketPage extends StatelessWidget {
               final tickets = snapshot.data!.docs
                   .where((doc) {
                 final uid = doc.id.substring(0, 10);
-                print(schoolId);
                 // Filter for specific user ID or other users
                 if (schoolId == '1234567890') {
-                  print(doc['claimStatus']);
                   return uid == schoolId || doc['claimStatus'] == 'turnover';
                 } else {
                   return uid == schoolId;
@@ -150,7 +148,7 @@ class MyTicketPage extends StatelessWidget {
                                       backgroundColor: schoolId == '1234567890' &&
                                           ticket.claimStatus == 'turnover' &&
                                           ticket.ticket != 'success'
-                                          ? Colors.blue // Active "Mark as Completed" for turnover tickets
+                                          ? Colors.red // Active "Mark as Completed" for turnover tickets
                                           : ticket.claimStatus == 'turnover'
                                           ? Colors.green // Disabled "Turned Over"
                                           : ticket.ticket == 'pending'
@@ -315,39 +313,6 @@ class MyTicketPage extends StatelessWidget {
 
     } catch (error) {
       // print("Error updating ticket with claim details: $error");
-    }
-  }
-
-  void _confirmDelete(BuildContext context, Ticket ticket) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("Delete Ticket"),
-          content: const Text("Are you sure you want to delete this ticket?"),
-          actions: [
-            TextButton(
-              child: const Text("Cancel"),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-            TextButton(
-              child: const Text("Delete", style: TextStyle(color: Colors.red)),
-              onPressed: () {
-                _deleteTicket(ticket.id);
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _deleteTicket(String ticketId) async {
-    try {
-      await FirebaseFirestore.instance.collection('items').doc(ticketId).delete();
-    } catch (error) {
-      // print("Error deleting ticket: $error");
     }
   }
 }

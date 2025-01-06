@@ -63,7 +63,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile updated successfully!')),
+          const SnackBar(content: Text('Profile updated! Relogin to see changes.')),
         );
 
         // Save updated data to SharedPreferences

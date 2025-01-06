@@ -5,7 +5,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/ticket_model.dart';
 import 'package:intl/intl.dart'; // Import the intl package for formatting
 
-class MyTicketPage extends StatelessWidget {
+class MyTicketPage extends StatefulWidget {
+  @override
+  _MyTicketPageState createState() => _MyTicketPageState();
+}
+
+class _MyTicketPageState extends State<MyTicketPage> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this); // 2 tabs: Pending, Success
+  }
+
   Future<String?> _getSchoolId() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getString('user_school_id');
@@ -16,6 +29,13 @@ class MyTicketPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text("My Tickets"),
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: const [
+            Tab(text: 'Active'),
+            Tab(text: 'Completed'),
+          ],
+        ),
       ),
       body: FutureBuilder<String?>(
         future: _getSchoolId(),
@@ -33,155 +53,169 @@ class MyTicketPage extends StatelessWidget {
                 return const Center(child: CircularProgressIndicator());
               }
 
-              // Filter tickets
-              final tickets = snapshot.data!.docs
+              // Filter tickets based on the status for each tab
+              final pendingTickets = snapshot.data!.docs
                   .where((doc) {
                 final uid = doc.id.substring(0, 10);
-                // Filter for specific user ID or other users
                 if (schoolId == '1234567890') {
                   return uid == schoolId || doc['claimStatus'] == 'turnover';
                 } else {
                   return uid == schoolId;
                 }
               })
+                  .where((doc) => doc['ticket'] == 'pending')
                   .map((doc) => Ticket.fromDocument(doc))
                   .toList();
 
-              return tickets.isEmpty
-                  ? const Center(child: Text("No tickets found"))
-                  : GridView.builder(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
-                  childAspectRatio: 0.59,
-                ),
-                itemCount: tickets.length,
-                itemBuilder: (context, index) {
-                  final ticket = tickets[index];
-                  return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                    elevation: 4,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (ticket.imageUrl.isNotEmpty)
-                          SizedBox(
-                            height: 120,
-                            width: double.infinity,
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: CachedNetworkImage(
-                                imageUrl: ticket.imageUrl,
-                                fit: BoxFit.cover,
-                                placeholder: (context, url) =>
-                                const Center(child: CircularProgressIndicator()),
-                                errorWidget: (context, url, error) =>
-                                const Icon(Icons.error, color: Colors.red),
-                              ),
-                            ),
-                          ),
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  ticket.name,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                Text(
-                                  ticket.dateTime,
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: Colors.grey[700],
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                Text(
-                                  'Item Type: ${ticket.status}',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: Colors.grey[700],
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    if (ticket.ticket != 'success') ...[
-                                      IconButton(
-                                        icon: const Icon(Icons.edit, color: Colors.blue),
-                                        onPressed: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  EditTicketPage(ticket: ticket),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                                Center(
-                                  child: TextButton(
-                                    onPressed: (schoolId == '1234567890' &&
-                                        ticket.claimStatus == 'turnover' &&
-                                        ticket.ticket != 'success') ||
-                                        (ticket.claimStatus != 'turnover' && ticket.ticket == 'pending')
-                                        ? () {
-                                      _showCompletionDialog(context, ticket);
-                                    }
-                                        : null, // Disable the button if conditions are not met
-                                    style: TextButton.styleFrom(
-                                      foregroundColor: Colors.white,
-                                      backgroundColor: schoolId == '1234567890' &&
-                                          ticket.claimStatus == 'turnover' &&
-                                          ticket.ticket != 'success'
-                                          ? Colors.red // Active "Mark as Completed" for turnover tickets
-                                          : ticket.claimStatus == 'turnover'
-                                          ? Colors.green // Disabled "Turned Over"
-                                          : ticket.ticket == 'pending'
-                                          ? Colors.red // Active "Mark as Completed"
-                                          : Colors.green, // Disabled "Completed"
-                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      schoolId == '1234567890' && ticket.claimStatus == 'turnover'
-                                          ? (ticket.ticket == 'pending' ? "Mark as Completed" : "Completed") // For turnover tickets
-                                          : ticket.claimStatus == 'turnover'
-                                          ? "Turned Over" // Default for non-1234567890 users
-                                          : (ticket.ticket == 'pending' ? "Mark as Completed" : "Completed"), // Other cases
-                                      style: const TextStyle(fontSize: 10),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
+              final successTickets = snapshot.data!.docs
+                  .where((doc) {
+                final uid = doc.id.substring(0, 10);
+                if (schoolId == '1234567890') {
+                  return uid == schoolId || doc['claimStatus'] == 'turnover';
+                } else {
+                  return uid == schoolId;
+                }
+              })
+                  .where((doc) => doc['ticket'] == 'success')
+                  .map((doc) => Ticket.fromDocument(doc))
+                  .toList();
+
+              return TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildTicketGrid(pendingTickets),
+                  _buildTicketGrid(successTickets),
+                ],
               );
             },
           );
         },
       ),
+    );
+  }
+
+  Widget _buildTicketGrid(List<Ticket> tickets) {
+    if (tickets.isEmpty) {
+      return const Center(child: Text("No tickets found"));
+    }
+
+    return GridView.builder(
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+        childAspectRatio: 0.59,
+      ),
+      itemCount: tickets.length,
+      itemBuilder: (context, index) {
+        final ticket = tickets[index];
+        return Card(
+          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+          elevation: 4,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (ticket.imageUrl.isNotEmpty)
+                SizedBox(
+                  height: 120,
+                  width: double.infinity,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: CachedNetworkImage(
+                      imageUrl: ticket.imageUrl,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) =>
+                      const Center(child: CircularProgressIndicator()),
+                      errorWidget: (context, url, error) =>
+                      const Icon(Icons.error, color: Colors.red),
+                    ),
+                  ),
+                ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        ticket.name,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        ticket.dateTime,
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Colors.grey[700],
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        'Item Type: ${ticket.status}',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Colors.grey[700],
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          if (ticket.ticket != 'success') ...[
+                            IconButton(
+                              icon: const Icon(Icons.edit, color: Colors.blue),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        EditTicketPage(ticket: ticket),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ],
+                      ),
+                      Center(
+                        child: TextButton(
+                          onPressed: (ticket.ticket == 'pending')
+                              ? () {
+                            _showCompletionDialog(context, ticket);
+                          }
+                              : null, // Disable button for non-pending tickets
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            backgroundColor: ticket.ticket == 'pending'
+                                ? Colors.red // Active for pending tickets
+                                : Colors.green, // Disabled for completed tickets
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: Text(
+                            ticket.ticket == 'pending'
+                                ? "Mark as Completed"
+                                : "Completed", // Text changes based on ticket status
+                            style: const TextStyle(fontSize: 10),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

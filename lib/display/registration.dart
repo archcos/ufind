@@ -154,7 +154,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                     AnimatedContainer(
                       duration: const Duration(milliseconds: 300),
                       width: _isRegistering ? 60 : MediaQuery.of(context).size.width * 0.8,
-                      height: 60,
+                      height: 45,
                       child: ElevatedButton(
                         onPressed: _handleRegister,
                         style: ElevatedButton.styleFrom(

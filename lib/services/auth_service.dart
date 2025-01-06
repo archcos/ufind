@@ -54,7 +54,7 @@ class AuthService {
         return {'success': false, 'message': 'Failed to log in.'};
       }
     } catch (e) {
-      return {'success': false, 'message': 'An error occurred: $e'};
+      return {'success': false, 'message': 'Please Check Internet Connection.'};
     }
   }
 

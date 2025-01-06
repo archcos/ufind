@@ -655,8 +655,6 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.send_and_archive_rounded, color: Colors.black), // Add icon
-                  SizedBox(width: 8), // Add spacing between icon and text
                   Text(
                     "Submit Ticket",
                     style: TextStyle(color: Colors.black), // Set text color

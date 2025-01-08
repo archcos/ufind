@@ -171,7 +171,6 @@ class ItemDetailsPage extends StatelessWidget {
               Text('Number: ${ticket.contactNumber}', style: const TextStyle(fontSize: 12)),
               Text('Email: ${ticket.email}', style: const TextStyle(fontSize: 12)),
               const SizedBox(height: 8),
-              if (ticket.status == 'lost') ...[
                const Text('Last Seen Location: ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 5),
                 SizedBox(
@@ -206,7 +205,6 @@ class ItemDetailsPage extends StatelessWidget {
                     ],
                   ),
                 ),
-              ],
               const SizedBox(height: 16),
               // Add Chat Button
 

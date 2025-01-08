@@ -90,7 +90,7 @@ class _InitialChatPageState extends State<InitialChatPage> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text(
-            'Provide Item Details to make your inquiry faster',
+            'If you believe this is yours, provide specific details \n(e.g., contents, brands, marking) when submitting your claim.',
             style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
           ),
           content: Column(

@@ -24,6 +24,15 @@ class AuthService {
         return {'success': false, 'message': 'User not found.'};
       }
 
+      // Check the user's status
+      String status = userDoc['status'];
+      if (status != 'active') {
+        return {
+          'success': false,
+          'message': 'Your account is currently inactive and cannot log in at this time. Please contact support for assistance.',
+        };
+      }
+
       // Retrieve stored salt and hashed password
       String storedSalt = userDoc['salt'];
       String storedHashedPassword = userDoc['password'];
@@ -57,6 +66,7 @@ class AuthService {
       return {'success': false, 'message': 'Please Check Internet Connection.'};
     }
   }
+
 
   String _hashPasswordWithSalt(String password, String salt) {
     final bytes = utf8.encode(password + salt); // Combine password and salt

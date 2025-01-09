@@ -19,6 +19,7 @@ class _InitialChatPageState extends State<InitialChatPage> {
   bool isFirstMessage = true;
   bool isPopupShown = false;
   final ScrollController _scrollController = ScrollController();
+  final ValueNotifier<bool> isSending = ValueNotifier(false);
 
   String getChatDocumentId() {
     final ids = [widget.userId, widget.receiverId];
@@ -192,6 +193,14 @@ class _InitialChatPageState extends State<InitialChatPage> {
   }
 
   @override
+  void dispose() {
+    _controller.dispose();
+    _scrollController.dispose();
+    isSending.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -362,17 +371,34 @@ class _InitialChatPageState extends State<InitialChatPage> {
                     ),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.send, color: Colors.blueAccent),
-                  onPressed: () async {
-                    if (_controller.text.isNotEmpty) {
-                      String userMessage = _controller.text;
-                      await sendMessage(
-                          widget.userId, widget.receiverId, userMessage);
-                      _controller.clear();
-                      // Scroll to bottom after sending a message
-                      _scrollToBottom();
-                    }
+                ValueListenableBuilder<bool>(
+                  valueListenable: isSending,
+                  builder: (context, sending, child) {
+                    return IconButton(
+                      icon: const Icon(Icons.send, color: Colors.blueAccent),
+                      onPressed: sending
+                          ? null // Disable the button when sending
+                          : () {
+                        if (_controller.text.isNotEmpty) {
+                          isSending.value = true; // Disable the button
+                          String userMessage = _controller.text;
+
+                          // Re-enable the button after 1 second
+                          Future.delayed(const Duration(seconds: 1), () {
+                            isSending.value = false;
+                          });
+
+                          // Send the message
+                          sendMessage(
+                            widget.userId,
+                            widget.receiverId,
+                            userMessage,
+                          );
+                          _controller.clear();
+                          _scrollToBottom();
+                        }
+                      },
+                    );
                   },
                 ),
               ],

@@ -17,6 +17,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   String? receiverName;
+  final ValueNotifier<bool> isSending = ValueNotifier(false);
 
   @override
   void initState() {
@@ -99,6 +100,14 @@ class _ChatScreenState extends State<ChatScreen> {
     for (var messageDoc in messagesSnapshot.docs) {
       await messageDoc.reference.update({'isRead': true});
     }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _scrollController.dispose();
+    isSending.dispose();
+    super.dispose();
   }
 
   @override
@@ -261,9 +270,29 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.send, color: Colors.deepPurpleAccent),
-                  onPressed: () => sendMessage(_controller.text),
+                ValueListenableBuilder<bool>(
+                  valueListenable: isSending,
+                  builder: (context, sending, child) {
+                    return IconButton(
+                      icon: const Icon(Icons.send, color: Colors.deepPurpleAccent),
+                      onPressed: sending
+                          ? null // Disable the button when sending
+                          : () {
+                        if (_controller.text.isNotEmpty) {
+                          isSending.value = true; // Disable the button
+                          String userMessage = _controller.text;
+
+                          // Re-enable the button after 1 second
+                          Future.delayed(const Duration(seconds: 1), () {
+                            isSending.value = false;
+                          });
+
+                          // Send the message
+                          sendMessage(_controller.text);
+                        }
+                      },
+                    );
+                  },
                 ),
               ],
             ),

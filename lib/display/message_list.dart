@@ -102,7 +102,7 @@ class MessagesListPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text("Conversations", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
         centerTitle: true,
-        backgroundColor: Colors.blueAccent,
+        backgroundColor: Colors.lightBlueAccent,
         elevation: 5,
       ),
       body: StreamBuilder<List<Map<String, dynamic>>>(
@@ -170,7 +170,7 @@ class MessagesListPage extends StatelessWidget {
                       }
                       final chatmateName =
                           nameSnapshot.data?['fullName'] ?? "Unknown User";
-                      final chatmateId = nameSnapshot.data?['id'] ?? "Unknown ID";
+                      // final chatmateId = nameSnapshot.data?['id'] ?? "Unknown ID";
                       final chatmateInitials = getInitials(chatmateName);
 
                       return StreamBuilder<Map<String, dynamic>?>(
@@ -217,12 +217,6 @@ class MessagesListPage extends StatelessWidget {
                                               fontSize: 16),
                                           overflow: TextOverflow.ellipsis,
                                         ),
-                                      ),
-                                      Text(
-                                        '($chatmateId)',
-                                        style: const TextStyle(
-                                            fontSize: 14, color: Colors.grey),
-                                        overflow: TextOverflow.ellipsis,
                                       ),
                                     ],
                                   ),

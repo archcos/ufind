@@ -83,7 +83,7 @@ class _ChatScreenState extends State<ChatScreen> {
   String formatTimestamp(Timestamp? timestamp) {
     if (timestamp == null) return "Pending...";
     final dateTime = timestamp.toDate();
-    return DateFormat('MM-dd hh:mm a').format(dateTime);
+    return DateFormat('MM-dd-yyyy hh:mm a').format(dateTime);
   }
 
   // Mark all unread messages as read when the chat screen is opened
@@ -105,8 +105,20 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(receiverName ?? "Chat"),
-        backgroundColor: Colors.deepPurpleAccent,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              receiverName ?? "Chat", // Main title
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            Text(
+              widget.receiverId, // Subtitle
+              style: const TextStyle(fontSize: 14, color: Colors.white),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.lightBlueAccent,
       ),
       body: Column(
         children: [

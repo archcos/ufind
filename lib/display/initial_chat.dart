@@ -102,17 +102,40 @@ class _InitialChatPageState extends State<InitialChatPage> {
               ),
               TextField(
                 controller: timeController,
-                decoration: const InputDecoration(labelText: 'Time Lost/Found'),
+                decoration: const InputDecoration(labelText: 'Time Lost'),
                 onTap: () async {
+                  // Show the date picker first
                   final selectedDate = await showDatePicker(
                     context: context,
                     initialDate: DateTime.now(),
                     firstDate: DateTime(2000),
                     lastDate: DateTime(2100),
                   );
+
                   if (selectedDate != null) {
-                    timeController.text =
-                        DateFormat('yyyy-MM-dd').format(selectedDate);
+                    // Show the time picker after the date is selected
+                    final selectedTime = await showTimePicker(
+                      context: context,
+                      initialTime: TimeOfDay.now(),
+                    );
+
+                    if (selectedTime != null) {
+                      // Combine the selected date and time
+                      final combinedDateTime = DateTime(
+                        selectedDate.year,
+                        selectedDate.month,
+                        selectedDate.day,
+                        selectedTime.hour,
+                        selectedTime.minute,
+                      );
+
+                      // Format the combined date and time
+                      timeController.text =
+                          DateFormat('yyyy-MM-dd HH:mm').format(combinedDateTime);
+                    } else {
+                      // If time is not selected, only show the date
+                      timeController.text = DateFormat('yyyy-MM-dd').format(selectedDate);
+                    }
                   }
                 },
               ),
@@ -135,7 +158,7 @@ class _InitialChatPageState extends State<InitialChatPage> {
                   await sendMessage(
                     widget.userId,
                     widget.receiverId,
-                    'ITEM DETAILS: \nDescription: $description\nTime Lost/Found: $time',
+                    'PROVIDED ITEM DETAILS: \nDescription: $description\nTime Lost: $time',
                   );
 
                   setState(() {

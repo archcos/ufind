@@ -318,7 +318,7 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Ticket Submitted Successfully!')),
+      const SnackBar(content: Text('Item Submitted Successfully!')),
     );
 
     if (context.mounted) {
@@ -353,7 +353,7 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
         TimeOfDay.fromDateTime(initialDate);
 
     setState(() {
-      _dateTimeController.text = DateFormat('yyyy-MM-ddTHH:mm').format(
+      _dateTimeController.text = DateFormat('yyyy-MM-dd HH:mm').format(
         DateTime(pickedDate.year, pickedDate.month, pickedDate.day,
             pickedTime.hour, pickedTime.minute),
       );
@@ -396,11 +396,11 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
     return Scaffold(
       key: _scaffoldMessengerKey, // Set the scaffoldMessengerKey here
       appBar: AppBar(
-        title: const Text("Ticket Details"),
+        title: const Text("Item Details"),
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
-            Tab(text: "Ticket Info"),
+            Tab(text: "Item Info"),
             Tab(text: "Contact Info"),
           ],
         ),
@@ -656,7 +656,7 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    "Submit Ticket",
+                    "Submit Item",
                     style: TextStyle(color: Colors.black), // Set text color
                   ),
                 ],
@@ -743,7 +743,7 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
                   Icon(Icons.send_and_archive_rounded, color: Colors.black), // Add icon
                   SizedBox(width: 8), // Add spacing between icon and text
                   Text(
-                    "Submit Ticket",
+                    "Submit Item",
                     style: TextStyle(color: Colors.black), // Set text color
                   ),
                 ],

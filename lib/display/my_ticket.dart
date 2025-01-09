@@ -13,6 +13,8 @@ class MyTicketPage extends StatefulWidget {
 class _MyTicketPageState extends State<MyTicketPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
+
+
   @override
   void initState() {
     super.initState();
@@ -28,7 +30,7 @@ class _MyTicketPageState extends State<MyTicketPage> with SingleTickerProviderSt
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("My Tickets"),
+        title: const Text("My Reports"),
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
@@ -44,7 +46,11 @@ class _MyTicketPageState extends State<MyTicketPage> with SingleTickerProviderSt
             return const Center(child: CircularProgressIndicator());
           }
 
-          String schoolId = snapshot.data!;
+          // Handle null case for schoolId
+          final schoolId = snapshot.data;
+          if (schoolId == null || schoolId.isEmpty) {
+            return const Center(child: Text('School ID not found.'));
+          }
 
           return StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance.collection('items').snapshots(),
@@ -83,8 +89,8 @@ class _MyTicketPageState extends State<MyTicketPage> with SingleTickerProviderSt
               return TabBarView(
                 controller: _tabController,
                 children: [
-                  _buildTicketGrid(pendingTickets),
-                  _buildTicketGrid(successTickets),
+                  _buildTicketGrid(pendingTickets, schoolId),
+                  _buildTicketGrid(successTickets, schoolId),
                 ],
               );
             },
@@ -94,9 +100,9 @@ class _MyTicketPageState extends State<MyTicketPage> with SingleTickerProviderSt
     );
   }
 
-  Widget _buildTicketGrid(List<Ticket> tickets) {
+  Widget _buildTicketGrid(List<Ticket> tickets, String schoolId) {
     if (tickets.isEmpty) {
-      return const Center(child: Text("No tickets found"));
+      return const Center(child: Text("No reports found"));
     }
 
     return GridView.builder(
@@ -109,6 +115,8 @@ class _MyTicketPageState extends State<MyTicketPage> with SingleTickerProviderSt
       itemCount: tickets.length,
       itemBuilder: (context, index) {
         final ticket = tickets[index];
+        final isTurnedOver = ticket.claimStatus == 'turnover';
+
         return Card(
           margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
           elevation: 4,
@@ -170,7 +178,8 @@ class _MyTicketPageState extends State<MyTicketPage> with SingleTickerProviderSt
                           if (ticket.ticket != 'success') ...[
                             IconButton(
                               icon: const Icon(Icons.edit, color: Colors.blue),
-                              onPressed: () {
+                              onPressed: schoolId == '1234567890' || !isTurnedOver
+                                  ? () {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -178,32 +187,37 @@ class _MyTicketPageState extends State<MyTicketPage> with SingleTickerProviderSt
                                         EditTicketPage(ticket: ticket),
                                   ),
                                 );
-                              },
+                              }
+                                  : null, // Disable edit for non-1234567890 users if turned over
                             ),
                           ],
                         ],
                       ),
                       Center(
                         child: TextButton(
-                          onPressed: (ticket.ticket == 'pending')
+                          onPressed: (!isTurnedOver || schoolId == '1234567890')
                               ? () {
-                            _showCompletionDialog(context, ticket);
+                            if (ticket.ticket == 'pending') {
+                              _showCompletionDialog(context, ticket);
+                            }
                           }
-                              : null, // Disable button for non-pending tickets
+                              : null, // Disable button for non-1234567890 users if turned over
                           style: TextButton.styleFrom(
                             foregroundColor: Colors.white,
-                            backgroundColor: ticket.ticket == 'pending'
+                            backgroundColor: (!isTurnedOver || schoolId == '1234567890')
+                                ? (ticket.ticket == 'pending'
                                 ? Colors.red // Active for pending tickets
-                                : Colors.green, // Disabled for completed tickets
+                                : Colors.green) // Completed tickets
+                                : Colors.grey, // Disabled button for turned over
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
                           child: Text(
-                            ticket.ticket == 'pending'
-                                ? "Mark as Completed"
-                                : "Completed", // Text changes based on ticket status
+                            isTurnedOver && schoolId != '1234567890'
+                                ? "Turned Over"
+                                : (ticket.ticket == 'pending' ? "Mark as Completed" : "Completed"),
                             style: const TextStyle(fontSize: 10),
                           ),
                         ),
@@ -237,8 +251,10 @@ class _MyTicketPageState extends State<MyTicketPage> with SingleTickerProviderSt
             ),
             TextButton(
               onPressed: () {
-                Navigator.pop(context); // Close the dialog
-                _showClaimDialog(context, ticket); // Show the claim details dialog
+                  _updateTicketDetails(
+                    ticket,
+                  );
+                  Navigator.pop(context); // Close the dialog
               },
               child: const Text('Yes'),
             ),
@@ -261,7 +277,7 @@ class _MyTicketPageState extends State<MyTicketPage> with SingleTickerProviderSt
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Claim Details'),
+          title: const Text('Claim/Find Details'),
           content: SingleChildScrollView(  // Add scrollability for content
             child: Form(
               key: claimFormKey,
@@ -269,12 +285,12 @@ class _MyTicketPageState extends State<MyTicketPage> with SingleTickerProviderSt
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextFormField(
-                    decoration: const InputDecoration(labelText: 'Claimers Student ID'),
+                    decoration: const InputDecoration(labelText: "Claimer's/Finder's Student ID"),
                     onSaved: (value) => claimerId = value,
                     validator: (value) => value!.isEmpty ? 'Please enter ID' : null,
                   ),
                   TextFormField(
-                    decoration: const InputDecoration(labelText: 'Claimers Name'),
+                    decoration: const InputDecoration(labelText: "Claimer's/Finder's  Name"),
                     onSaved: (value) => claimerName = value,
                     validator: (value) => value!.isEmpty ? 'Please enter full name' : null,
                   ),
@@ -289,7 +305,7 @@ class _MyTicketPageState extends State<MyTicketPage> with SingleTickerProviderSt
                     validator: (value) => value!.isEmpty ? 'Describe your item' : null,
                   ),
                   TextFormField(
-                    decoration: const InputDecoration(labelText: 'Location Lost'),
+                    decoration: const InputDecoration(labelText: 'Location Lost/Found'),
                     onSaved: (value) => locationLost = value,
                     validator: (value) => value!.isEmpty ? 'Last location you remember' : null,
                   ),
@@ -329,7 +345,20 @@ class _MyTicketPageState extends State<MyTicketPage> with SingleTickerProviderSt
     );
   }
 
-  void _updateTicketWithClaimDetails(Ticket ticket, String claimerId, String description, String locationLost, String yearSection, String claimerName, String dateReceived) async {
+  void _updateTicketDetails(Ticket ticket) async {
+    try {
+      await FirebaseFirestore.instance.collection('items').doc(ticket.id).update({
+        'ticket': 'success',
+      });
+
+    } catch (error) {
+      // print("Error updating ticket with claim details: $error");
+    }
+  }
+
+
+
+void _updateTicketWithClaimDetails(Ticket ticket, String claimerId, String description, String locationLost, String yearSection, String claimerName, String dateReceived) async {
     try {
       await FirebaseFirestore.instance.collection('Claim').doc(ticket.id).set({
         'studentId': claimerId,

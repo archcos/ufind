@@ -403,7 +403,7 @@ class _ItemsListPageState extends State<ItemsListPage> with SingleTickerProvider
             ),
           );
         },
-        backgroundColor: Colors.blue,
+        backgroundColor: Colors.blueAccent,
         tooltip: 'Add New Ticket',
         child: const Icon(
           Icons.add,

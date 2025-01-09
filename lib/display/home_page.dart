@@ -138,14 +138,14 @@ class HomePage extends StatelessWidget {
                 ),
                 ListTile(
                   leading: const Icon(Icons.view_list),
-                  title: const Text('View My Ticket'),
+                  title: const Text('View My Reports'),
                   onTap: () {
                     Navigator.pushNamed(context, '/my-tickets');
                   },
                 ),
                 ListTile(
                   leading: const Icon(Icons.add_box),
-                  title: const Text('Create Ticket'),
+                  title: const Text('Report Item'),
                   onTap: () {
                     Navigator.pushNamed(context, '/create-ticket');
                   },
@@ -467,6 +467,7 @@ class HomePage extends StatelessWidget {
                   );
                 },
                 backgroundColor: Colors.blueAccent,
+                foregroundColor: Colors.white,
                 child: Stack(
                   clipBehavior: Clip.none, // Ensure the badge doesn't get clipped
                   children: [

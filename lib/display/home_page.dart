@@ -139,10 +139,21 @@ class HomePage extends StatelessWidget {
                 ListTile(
                   leading: const Icon(Icons.view_list),
                   title: const Text('View My Reports'),
-                  onTap: () {
-                    Navigator.pushNamed(context, '/my-tickets');
+                  onTap: () async {
+                    // Fetch the user ID
+                    String userId = await _getUserId();
+
+                    // Navigate based on user ID
+                    if (userId == '1234567890') {
+                      // Navigate to /my-tickets if userId is 1234567890
+                      Navigator.pushNamed(context, '/my-tickets');
+                    } else {
+                      // Otherwise, navigate to /my-report
+                      Navigator.pushNamed(context, '/my-reports');
+                    }
                   },
                 ),
+
                 ListTile(
                   leading: const Icon(Icons.add_box),
                   title: const Text('Report Item'),

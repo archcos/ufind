@@ -202,9 +202,9 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
       // Automatically select 'TurnOver' for savedId == '1234567890' and set contact details
       setState(() {
         _status = 'TurnOver'; // Set status to 'Turnover'
-        _contactNameController.text = 'Entrance Security Guard/Office of Students Affair';
-        _contactNumberController.text = '09123456789';
-        _emailController.text = 'osa@gmail.com';
+        _contactNameController.text = 'Campus Security - Gate Entrance';
+        _contactNumberController.text = '000000000';
+        _emailController.text = 'noemail@gmail.com';
       });
     } else {
       // Show the dialog for other users
@@ -213,7 +213,7 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
         builder: (context) => AlertDialog(
           title: const Text('Keep/Turnover'),
           content: const Text(
-              'Are you going to keep the item and give it yourself, or turn it over to Entrance Security Guard/OSA?'),
+              'Are you going to keep the item and give it yourself, or turn it over to Campus Security - Gate Entrance'),
           actions: [
             TextButton(
               onPressed: () {
@@ -230,9 +230,9 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
                 setState(() {
                   _status = 'TurnOver'; // Set status to 'Turnover'
                   // Automatically set the contact details for 'TurnOver'
-                  _contactNameController.text = 'Entrance Security Guard/Office of Students Affair';
-                  _contactNumberController.text = '09123456789';
-                  _emailController.text = 'osa@gmail.com';
+                  _contactNameController.text = 'Campus Security - Gate Entrance';
+                  _contactNumberController.text = '000000000';
+                  _emailController.text = 'noemail@gmail.com';
                 });
                 Navigator.pop(context); // Close the dialog
               },
@@ -296,7 +296,7 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> with SingleTicker
     String documentId = '${schoolId}_$uniqueId'; // Use schoolId + unique ID for "Keep"
 
     if (_status == 'TurnOver') {
-      _claimStatus = 'turnover';
+      _claimStatus = 'turnover(guard)';
     } else {
       _claimStatus = 'keep';
     }

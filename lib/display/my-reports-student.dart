@@ -5,12 +5,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/ticket_model.dart';
 import 'package:intl/intl.dart'; // Import the intl package for formatting
 
-class MyTicketPage extends StatefulWidget {
+class MyReportsPage extends StatefulWidget {
   @override
-  _MyTicketPageState createState() => _MyTicketPageState();
+  _MyReportsPageState createState() => _MyReportsPageState();
 }
 
-class _MyTicketPageState extends State<MyTicketPage> with SingleTickerProviderStateMixin {
+class _MyReportsPageState extends State<MyReportsPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
 
@@ -18,7 +18,7 @@ class _MyTicketPageState extends State<MyTicketPage> with SingleTickerProviderSt
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this); // 2 tabs: Pending, Success
+    _tabController = TabController(length: 2, vsync: this); // 2 tabs: Pending, Success
   }
 
   Future<String?> _getSchoolId() async {
@@ -36,7 +36,6 @@ class _MyTicketPageState extends State<MyTicketPage> with SingleTickerProviderSt
           tabs: const [
             Tab(text: 'Active'),
             Tab(text: 'Completed'),
-            Tab(text: 'OSA'),
           ],
         ),
       ),
@@ -64,41 +63,26 @@ class _MyTicketPageState extends State<MyTicketPage> with SingleTickerProviderSt
               final pendingTickets = snapshot.data!.docs
                   .where((doc) {
                 final uid = doc.id.substring(0, 10);
-                // Ensure we exclude tickets with claimStatus 'turnover(osa)'
                 if (schoolId == '1234567890') {
                   return uid == schoolId || doc['claimStatus'] == 'turnover(guard)';
                 } else {
                   return uid == schoolId;
                 }
               })
-                  .where((doc) => doc['ticket'] == 'pending' && doc['claimStatus'] != 'turnover(osa)') // Exclude turnover(osa)
+                  .where((doc) => doc['ticket'] == 'pending')
                   .map((doc) => Ticket.fromDocument(doc))
                   .toList();
 
               final successTickets = snapshot.data!.docs
                   .where((doc) {
                 final uid = doc.id.substring(0, 10);
-                // Ensure we exclude tickets with claimStatus 'turnover(osa)'
                 if (schoolId == '1234567890') {
                   return uid == schoolId || doc['claimStatus'] == 'turnover(guard)';
                 } else {
                   return uid == schoolId;
                 }
               })
-                  .where((doc) => doc['ticket'] == 'success' && doc['claimStatus'] != 'turnover(osa)') // Exclude turnover(osa)
-                  .map((doc) => Ticket.fromDocument(doc))
-                  .toList();
-
-
-              final turnoverTickets = snapshot.data!.docs
-                  .where((doc) {
-                final uid = doc.id.substring(0, 10);
-                if (schoolId == '1234567890') {
-                  return uid == schoolId || doc['claimStatus'] == 'turnover(osa)';
-                } else {
-                  return uid == schoolId;
-                }
-              })
+                  .where((doc) => doc['ticket'] == 'success')
                   .map((doc) => Ticket.fromDocument(doc))
                   .toList();
 
@@ -107,95 +91,12 @@ class _MyTicketPageState extends State<MyTicketPage> with SingleTickerProviderSt
                 children: [
                   _buildTicketGrid(pendingTickets, schoolId),
                   _buildTicketGrid(successTickets, schoolId),
-                  schoolId == '1234567890' ? _buildTurnoverTicketGrid(turnoverTickets) : const Center(child: Text('No access to Turned Over tickets')),
                 ],
               );
             },
           );
         },
       ),
-    );
-  }
-
-  Widget _buildTurnoverTicketGrid(List<Ticket> tickets) {
-    if (tickets.isEmpty) {
-      return const Center(child: Text("No Turned Over items to OSA found"));
-    }
-
-    return GridView.builder(
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
-        childAspectRatio: 0.8,
-      ),
-      itemCount: tickets.length,
-      itemBuilder: (context, index) {
-        final ticket = tickets[index];
-
-        return Card(
-          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-          elevation: 4,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (ticket.imageUrl.isNotEmpty)
-                SizedBox(
-                  height: 120,
-                  width: double.infinity,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: CachedNetworkImage(
-                      imageUrl: ticket.imageUrl,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) =>
-                      const Center(child: CircularProgressIndicator()),
-                      errorWidget: (context, url, error) =>
-                      const Icon(Icons.error, color: Colors.red),
-                    ),
-                  ),
-                ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        ticket.name,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        ticket.dateTime,
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: Colors.grey[700],
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        'Item Type: ${ticket.status}',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: Colors.grey[700],
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 
@@ -274,59 +175,20 @@ class _MyTicketPageState extends State<MyTicketPage> with SingleTickerProviderSt
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          // Existing edit button for non-turned-over tickets and other users
                           if (ticket.ticket != 'success') ...[
                             IconButton(
                               icon: const Icon(Icons.edit, color: Colors.blue),
-                              onPressed: (schoolId == '1234567890' || !isTurnedOver)
-                                  ? null // Disable if the user is 1234567890 or if the ticket is turned over
-                                  : () {
+                              onPressed: schoolId == '1234567890' || !isTurnedOver
+                                  ? () {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => EditTicketPage(ticket: ticket),
+                                    builder: (context) =>
+                                        EditTicketPage(ticket: ticket),
                                   ),
                                 );
-                              },
-                            ),
-                          ],
-                          // New "Turn Over" button for 1234567890
-                          if (schoolId == '1234567890' && ticket.ticket != 'success') ...[
-                            IconButton(
-                              icon: const Icon(Icons.move_up_outlined , color: Colors.orange),
-                              onPressed: () async {
-                                // Show dialog asking if the user wants to turn over the item to OSA
-                                  await showDialog(
-                                  context: context,
-                                  builder: (context) => AlertDialog(
-                                    title: const Text('Turn Over Item'),
-                                    content: const Text('Are you going to turn over this item to OSA?'),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () {
-                                          Navigator.pop(context, false); // User chooses not to turn over
-                                        },
-                                        child: const Text('No'),
-                                      ),
-                                      TextButton(
-                                        onPressed: () {
-                                            _updateTurnOverDetails(
-                                              ticket,
-                                            );
-                                            Navigator.pop(context); // Close the dialog
-                                        },
-                                        child: const Text('Yes'),
-                                      ),
-                                    ],
-                                  ),
-                                );
-
-                                // Handle the result of the dialog
-
-
-
-                                }
-
+                              }
+                                  : null, // Disable edit for non-1234567890 users if turned over
                             ),
                           ],
                         ],
@@ -476,9 +338,9 @@ class _MyTicketPageState extends State<MyTicketPage> with SingleTickerProviderSt
   void _updateTurnOverDetails(Ticket ticket) async {
 
 
-      await FirebaseFirestore.instance.collection('items').doc(ticket.id).update({
-        'claimStatus': 'turnover(osa)',
-      });
+    await FirebaseFirestore.instance.collection('items').doc(ticket.id).update({
+      'claimStatus': 'turnover(osa)',
+    });
 
   }
 }
@@ -487,24 +349,24 @@ class _MyTicketPageState extends State<MyTicketPage> with SingleTickerProviderSt
 
 
 void _updateTicketWithClaimDetails(Ticket ticket, String claimerId, String yearSection, String claimerName, String contactNumber) async {
-    try {
-      await FirebaseFirestore.instance.collection('CompletedClaims').doc(ticket.id).set({
-        'studentId': claimerId,
-        'itemId': ticket.id,
-        'name': claimerName,
-        'yearSection': yearSection,
-        'contactNumber': contactNumber,
+  try {
+    await FirebaseFirestore.instance.collection('CompletedClaims').doc(ticket.id).set({
+      'studentId': claimerId,
+      'itemId': ticket.id,
+      'name': claimerName,
+      'yearSection': yearSection,
+      'contactNumber': contactNumber,
 
 
-      });
-      await FirebaseFirestore.instance.collection('items').doc(ticket.id).update({
-        'ticket': 'success',
-      });
+    });
+    await FirebaseFirestore.instance.collection('items').doc(ticket.id).update({
+      'ticket': 'success',
+    });
 
-    } catch (error) {
-      // print("Error updating ticket with claim details: $error");
-    }
+  } catch (error) {
+    // print("Error updating ticket with claim details: $error");
   }
+}
 
 
 
@@ -579,7 +441,7 @@ class _EditTicketPageState extends State<EditTicketPage> {
     // _dateTime = widget.ticket.dateTime; // Initialize the dateTime with current ticket value
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Edit Report")),
+      appBar: AppBar(title: const Text("Edit Ticket")),
       body: SingleChildScrollView( // Wrap with SingleChildScrollView
         child: Padding(
           padding: const EdgeInsets.all(16),

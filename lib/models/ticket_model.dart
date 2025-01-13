@@ -13,7 +13,7 @@ class Ticket {
   final String status;
   final String studentId;
   final String ticket;
-  final String claimStatus;
+  late final String claimStatus;
 
 
 

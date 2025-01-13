@@ -73,6 +73,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
         'password': hashedPassword,
         'salt': salt,
         'status': 'active',
+        'member': 'user',
       });
 
       _showMessage('Registration Successful! Please login now with your Student ID');

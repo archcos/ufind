@@ -103,7 +103,7 @@ class ItemDetailsPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(30), // Rounded corners
                   ),
                   child: const Text(
-                    'This item has been turned over to the Guard/OSA, Please visit their location.',
+                    'This item has been turned over to the Campus Security, Please visit their location at the Entrance Gate.',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,

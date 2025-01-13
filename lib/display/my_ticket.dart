@@ -477,6 +477,7 @@ class _MyTicketPageState extends State<MyTicketPage> with SingleTickerProviderSt
 
 
       await FirebaseFirestore.instance.collection('items').doc(ticket.id).update({
+        'fullName': "Office of Student Affairs",
         'claimStatus': 'turnover(osa)',
       });
 

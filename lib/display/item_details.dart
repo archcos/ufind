@@ -102,9 +102,11 @@ class ItemDetailsPage extends StatelessWidget {
                     color: Colors.grey, // Disabled button color
                     borderRadius: BorderRadius.circular(30), // Rounded corners
                   ),
-                  child: const Text(
-                    'This item has been turned over to the Campus Security, Please visit their location at the Entrance Gate.',
-                    style: TextStyle(
+                  child: Text(
+                    ticket.claimStatus == 'turnover(guard)'
+                        ? 'This item has been turned over to the Campus Security. Please visit their location at the Entrance Gate.'
+                        : 'This item has been turned over to OSA. Please visit the Office of Student Affairs (OSA) for more information.',
+                    style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
                       color: Colors.white, // Text color
@@ -161,15 +163,127 @@ class ItemDetailsPage extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
-              Text('Item Name: ${ticket.name}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              Text('Description: ${ticket.description}', style: const TextStyle(fontSize: 12)),
-              Text( 'Date & Time: ${formatDateTime(ticket.dateTime)}', style: const TextStyle(fontSize: 12)),
-              const SizedBox(height: 8),
-              const Text('Contact Details', style: TextStyle(fontSize: 16,  fontWeight: FontWeight.bold)),
-              Text('Name: ${ticket.fullName}', style: const TextStyle(fontSize: 12)),
-              Text('Number: ${ticket.contactNumber}', style: const TextStyle(fontSize: 12)),
-              Text('Email: ${ticket.email}', style: const TextStyle(fontSize: 12)),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Item Details Section
+                  Card(
+                    margin: const EdgeInsets.all(8),
+                    elevation: 3, // Adds a subtle shadow effect
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8), // Rounded corners
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Row(
+                            children: [
+                              Icon(Icons.inventory, color: Colors.blue),
+                              SizedBox(width: 8),
+                              Text(
+                                'Item Details',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const Divider(color: Colors.grey),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Item Name: ${ticket.name}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Ticket ID: ${ticket.id.substring(11)}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.black54,
+                            ),
+                          ),
+                          Text(
+                            'Description: ${ticket.description}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.black54,
+                            ),
+                          ),
+                          Text(
+                            'Date & Time: ${formatDateTime(ticket.dateTime)}',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Colors.black54,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Contact Details Section
+                  Card(
+                    margin: const EdgeInsets.all(8),
+                    elevation: 3,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Row(
+                            children: [
+                              Icon(Icons.contact_phone, color: Colors.green),
+                              SizedBox(width: 8),
+                              Text(
+                                'Contact Details',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const Divider(color: Colors.grey),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Name: ${ticket.fullName}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.black54,
+                            ),
+                          ),
+                          Text(
+                            'Number: ${ticket.contactNumber}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.black54,
+                            ),
+                          ),
+                          Text(
+                            'Email: ${ticket.email}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.black54,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 8),
                const Text('Last Seen Location: ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 5),

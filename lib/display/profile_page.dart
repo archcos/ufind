@@ -110,27 +110,65 @@ class _ProfilePageState extends State<ProfilePage> {
               const SizedBox(height: 16),
 
               // Text fields for user details
-              TextField(
-                controller: _firstNameController,
-                decoration: const InputDecoration(labelText: 'First Name'),
-              ),
-              TextField(
-                controller: _lastNameController,
-                decoration: const InputDecoration(labelText: 'Last Name'),
-              ),
-              TextField(
-                controller: _contactNumberController,
-                decoration: const InputDecoration(labelText: 'Contact Number'),
-              ),
-              TextField(
-                controller: _schoolIdController,
-                decoration: const InputDecoration(labelText: 'School ID'),
-                readOnly: true, // School ID is used as the document ID, so it's read-only
-              ),
-              TextField(
-                controller: _passwordController,
-                obscureText: true,
-                decoration: const InputDecoration(labelText: 'Password'),
+              Column(
+                children: [
+                  TextField(
+                    controller: _firstNameController,
+                    decoration: const InputDecoration(
+                      labelText: 'First Name',
+                      prefixIcon: Icon(Icons.person),
+                      border: OutlineInputBorder(),
+                      filled: true,
+                      fillColor: Colors.white70,
+                    ),
+                  ),
+                  const SizedBox(height: 12), // Add spacing between fields
+                  TextField(
+                    controller: _lastNameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Last Name',
+                      prefixIcon: Icon(Icons.person_outline),
+                      border: OutlineInputBorder(),
+                      filled: true,
+                      fillColor: Colors.white70,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _contactNumberController,
+                    decoration: const InputDecoration(
+                      labelText: 'Contact Number',
+                      prefixIcon: Icon(Icons.phone),
+                      border: OutlineInputBorder(),
+                      filled: true,
+                      fillColor: Colors.white70,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _schoolIdController,
+                    readOnly: true, // School ID is used as the document ID, so it's read-only
+                    decoration: const InputDecoration(
+                      labelText: 'School ID',
+                      prefixIcon: Icon(Icons.school),
+                      border: OutlineInputBorder(),
+                      filled: true,
+                      fillColor: Colors.white70,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _passwordController,
+                    obscureText: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Password',
+                      prefixIcon: Icon(Icons.lock),
+                      border: OutlineInputBorder(),
+                      filled: true,
+                      fillColor: Colors.white70,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
 

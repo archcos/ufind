@@ -64,7 +64,7 @@ class _MyReportsPageState extends State<MyReportsPage> with SingleTickerProvider
                   .where((doc) {
                 final uid = doc.id.substring(0, 10);
                 if (schoolId == '1234567890') {
-                  return uid == schoolId || doc['claimStatus'] == 'turnover(guard)';
+                  return uid == schoolId || doc['claimStatus'] == 'turnover(guard)' || doc['claimStatus'] == 'turnover(osa)';
                 } else {
                   return uid == schoolId;
                 }
@@ -77,7 +77,7 @@ class _MyReportsPageState extends State<MyReportsPage> with SingleTickerProvider
                   .where((doc) {
                 final uid = doc.id.substring(0, 10);
                 if (schoolId == '1234567890') {
-                  return uid == schoolId || doc['claimStatus'] == 'turnover(guard)';
+                  return uid == schoolId || doc['claimStatus'] == 'turnover(guard)'  || doc['claimStatus'] == 'turnover(osa)';
                 } else {
                   return uid == schoolId;
                 }
@@ -115,7 +115,7 @@ class _MyReportsPageState extends State<MyReportsPage> with SingleTickerProvider
       itemCount: tickets.length,
       itemBuilder: (context, index) {
         final ticket = tickets[index];
-        final isTurnedOver = ticket.claimStatus == 'turnover(guard)';
+        final isTurnedOver = ticket.claimStatus == 'turnover(guard)'  || ticket.claimStatus == 'turnover(osa)';
 
         return Card(
           margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -333,16 +333,6 @@ class _MyReportsPageState extends State<MyReportsPage> with SingleTickerProvider
       },
     );
   }
-
-
-  void _updateTurnOverDetails(Ticket ticket) async {
-
-
-    await FirebaseFirestore.instance.collection('items').doc(ticket.id).update({
-      'claimStatus': 'turnover(osa)',
-    });
-
-  }
 }
 
 
@@ -403,7 +393,7 @@ class _EditTicketPageState extends State<EditTicketPage> {
 
   // Make this nullable to prevent LateInitializationError
   final _statuses = ['found', 'lost'];
-  final _claimStatuses = ['keep', 'turnover(guard)'];
+  final _claimStatuses = ['keep', 'turnover(guard)', 'turnover(osa)'];
 
   // String? _dateTime; // Add this to hold the updated dateTime
   final TextEditingController _dateTimeController = TextEditingController();
@@ -587,31 +577,54 @@ class _EditTicketPageState extends State<EditTicketPage> {
                       : null,
                 ),
                 // Check if the status is 'lost', if so, hide the dropdown.
-                if (widget.ticket.status != 'lost') ...[
-                  DropdownButtonFormField<String>(
-                    value: widget.ticket.claimStatus.isNotEmpty ? widget.ticket
-                        .claimStatus : _claimStatuses[0],
-                    // Use _claimStatus here
-                    decoration: const InputDecoration(
-                        labelText: "Keep/Turnover"),
-                    items: _claimStatuses.map((claimStatus) {
-                      return DropdownMenuItem<String>(
-                        value: claimStatus,
-                        child: Text(claimStatus),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _claimStatus =
-                        value!; // Update _claimStatus when the dropdown value changes
-                      });
-                    },
-                    validator: (value) =>
-                    value == null
-                        ? "Select item type"
-                        : null,
-                  ),
-                ],
+                Column(
+                  children: [
+                    if (widget.ticket.status != 'lost') ...[
+                      DropdownButtonFormField<String>(
+                        value: widget.ticket.claimStatus.isNotEmpty
+                            ? widget.ticket.claimStatus
+                            : _claimStatuses[0],
+                        decoration: const InputDecoration(
+                          labelText: "Keep/Turnover",
+                        ),
+                        items: _claimStatuses.map((claimStatus) {
+                          return DropdownMenuItem<String>(
+                            value: claimStatus,
+                            child: Text(claimStatus),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            if (value == 'turnover(osa)') {
+                              // Show warning message
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    color: Colors.red, // Red background
+                                    child: const Text(
+                                      'Only Campus Security can directly turnover to OSA. Please turnover to Guard first.',
+                                      style: TextStyle(
+                                        color: Colors.white, // White text color
+                                      ),
+                                    ),
+                                  ),
+                                  duration: const Duration(seconds: 3), // Duration the warning will be displayed
+                                ),
+                              );
+                              // Reset to previous valid value or default value
+                              _claimStatus = _claimStatuses[0];
+                            } else {
+                              // Update _claimStatus when the dropdown value changes
+                              _claimStatus = value!;
+                            }
+                          });
+                        },
+                        validator: (value) => value == null ? "Select item type" : null,
+                      ),
+                    ],
+                  ],
+                ),
                 Visibility(
                   visible: false, // This makes it hidden
                   child: TextFormField(
@@ -641,6 +654,7 @@ class _EditTicketPageState extends State<EditTicketPage> {
                         if (_formKey.currentState!.validate()) {
                           _formKey.currentState!.save();
                           _updateTicket(context);
+
                         }
                       }
                     },
@@ -652,6 +666,18 @@ class _EditTicketPageState extends State<EditTicketPage> {
         ),
       ),
     );
+  }
+
+  void _updateTurnOverDetails(Ticket ticket) async {
+
+
+    await FirebaseFirestore.instance.collection('items').doc(ticket.id).update({
+      'fullName': 'Campus Security - Gate Entrance',
+      'contactNumber': '000000000',
+      'email': 'noemail@gmail.com',
+      'claimStatus': 'turnover(guard)',
+    });
+
   }
 
   void _showTurnOverWarningDialog(BuildContext context) {
@@ -690,8 +716,26 @@ class _EditTicketPageState extends State<EditTicketPage> {
   }
 
   void _updateTicket(BuildContext context) async {
-    // print("DateTime before updateTicket: ${_dateTimeController
-    //     .text}"); // Debugging line
+    // Check if the claimStatus is 'turnover(guard)' and set the appropriate values
+    if (_claimStatus == 'turnover(guard)') {
+      // Set specific fields for "turnover(guard)"
+      _fullName = 'Campus Security - Gate Entrance';
+      _contactNumber = '000000000';
+      _email = 'noemail@gmail.com';
+      _claimStatus = 'turnover(guard)'; // Ensure claimStatus is set to 'turnover(guard)'
+
+      // Optionally, show a message or warning about the turnover
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'This item is being turned over to the Guard.',
+            style: TextStyle(color: Colors.white), // White text color
+          ),
+          backgroundColor: Colors.red, // Red background
+          duration: Duration(seconds: 3), // Duration of the Snackbar
+        ),
+      );
+    }
 
     try {
       // Ensure widget is still mounted before updating
@@ -702,22 +746,21 @@ class _EditTicketPageState extends State<EditTicketPage> {
             .update({
           'name': _name,
           'description': _description,
-          'fullName': _fullName,
-          'contactNumber': _contactNumber,
-          'email': _email,
+          'fullName': _fullName, // Set to 'Campus Security - Gate Entrance'
+          'contactNumber': _contactNumber, // Set to '000000000'
+          'email': _email, // Set to 'noemail@gmail.com'
           'location': _location,
           'status': _status,
           'imageUrl': _imageUrl,
-          'claimStatus': _claimStatus,
-          // Use _claimStatus here to save the updated value
-          'dateTime': _dateTimeController.text,
-          // Save the updated dateTime here
+          'claimStatus': _claimStatus, // Set to 'turnover(guard)'
+          'dateTime': _dateTimeController.text, // Save the updated dateTime here
         });
-        // print(_claimStatus);
+
         Navigator.of(context).pop(); // Navigate back after update
       }
     } catch (error) {
-      // print("Error updating ticket: $error");
+      // Handle the error
+      print("Error updating ticket: $error");
     }
   }
 }

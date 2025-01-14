@@ -9,7 +9,7 @@ import 'package:untitled/display/contact_us.dart';
 import 'package:untitled/display/home_page.dart';
 import 'package:untitled/display/landing_page.dart';
 import 'package:untitled/display/message_list.dart';
-import 'package:untitled/display/my-reports-student.dart';
+import 'package:untitled/display/my_reports_student.dart';
 import 'package:untitled/display/my_ticket.dart';
 import 'package:untitled/display/profile_page.dart';
 import 'package:untitled/display/registration.dart';

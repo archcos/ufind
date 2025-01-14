@@ -784,26 +784,58 @@ class MapPickerScreen extends StatefulWidget {
 
 class _MapPickerScreenState extends State<MapPickerScreen> {
   late LatLng selectedLocation;
+  late MapController mapController;
 
   @override
   void initState() {
     super.initState();
     selectedLocation = widget.initialPosition;
+    mapController = MapController();
+    // Ensure the map is rendered before interacting with the MapController
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // You can now safely use mapController
+      mapController.move(widget.initialPosition, 18.0); // Move map to initial position
+    });
+
   }
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Pick Location")),
       body: FlutterMap(
+        mapController: mapController, // Pass the mapController
         options: MapOptions(
-          initialCenter: widget.initialPosition, // Update 'center' to 'initialCenter'
+          initialCenter: widget.initialPosition,
           initialZoom: 18.0,
           minZoom: 18,
+          onPositionChanged: (MapCamera camera, bool isAnimated) {
+            // Define your bounds
+            final LatLngBounds bounds = LatLngBounds(
+              LatLng(8.486018, 124.655450), // Southwest corner of the bounding box
+              LatLng(8.485803, 124.658071), // Northeast corner of the bounding box
+            );
+
+            // Check if the camera center is out of bounds
+            final lat = camera.center.latitude;
+            final lng = camera.center.longitude;
+
+            // Constrain the camera center to stay within the bounds
+            final clampedLat = lat.clamp(bounds.southWest.latitude, bounds.northEast.latitude);
+            final clampedLng = lng.clamp(bounds.southWest.longitude, bounds.northEast.longitude);
+
+            // Set the camera's new position if it's out of bounds
+            if (lat != clampedLat || lng != clampedLng) {
+              // Move the camera to the constrained position
+              mapController.move(LatLng(clampedLat, clampedLng), camera.zoom);
+            }
+          },
           onTap: (tapPosition, latLng) {
-            setState(() {
-              selectedLocation = latLng;
-            });
+              setState(() {
+                selectedLocation = latLng;
+                print(latLng);
+              });
           },
         ),
         children: [

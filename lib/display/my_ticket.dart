@@ -3,7 +3,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/ticket_model.dart';
-import 'package:intl/intl.dart'; // Import the intl package for formatting
+import 'package:intl/intl.dart';
+
+import 'my_item_details.dart'; // Import the intl package for formatting
 
 class MyTicketPage extends StatefulWidget {
   @override
@@ -216,155 +218,170 @@ class _MyTicketPageState extends State<MyTicketPage> with SingleTickerProviderSt
         final ticket = tickets[index];
         final isTurnedOver = ticket.claimStatus == 'turnover(guard)';
 
-        return Card(
-          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-          elevation: 4,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (ticket.imageUrl.isNotEmpty)
-                SizedBox(
-                  height: 120,
-                  width: double.infinity,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: CachedNetworkImage(
-                      imageUrl: ticket.imageUrl,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) =>
-                      const Center(child: CircularProgressIndicator()),
-                      errorWidget: (context, url, error) =>
-                      const Icon(Icons.error, color: Colors.red),
+        // Wrap the entire card with GestureDetector
+        return GestureDetector(
+          onTap: () {
+            // Navigate to MyItemDetailsPage when the card is tapped
+            print('Ticket tapped: ${ticket.name}');
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => MyItemDetailsPage(ticket: ticket),
+              ),
+            );
+          },
+          child: Card(
+            margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+            elevation: 4,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (ticket.imageUrl.isNotEmpty)
+                  SizedBox(
+                    height: 120,
+                    width: double.infinity,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: CachedNetworkImage(
+                        imageUrl: ticket.imageUrl,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) =>
+                        const Center(child: CircularProgressIndicator()),
+                        errorWidget: (context, url, error) =>
+                        const Icon(Icons.error, color: Colors.red),
+                      ),
                     ),
                   ),
-                ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        ticket.name,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          ticket.name,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        ticket.dateTime,
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: Colors.grey[700],
+                        Text(
+                          ticket.dateTime,
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.grey[700],
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        'Item Type: ${ticket.status}',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: Colors.grey[700],
+                        Text(
+                          'Item Type: ${ticket.status}',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.grey[700],
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          // Existing edit button for non-turned-over tickets and other users
-                          if (ticket.ticket != 'success') ...[
-                            IconButton(
-                              icon: const Icon(Icons.edit, color: Colors.blue),
-                              onPressed: (schoolId == '1234567890' || !isTurnedOver)
-                                  ? null // Disable if the user is 1234567890 or if the ticket is turned over
-                                  : () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => EditTicketPage(ticket: ticket),
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
-                          // New "Turn Over" button for 1234567890
-                          if (schoolId == '1234567890' && ticket.ticket != 'success') ...[
-                            IconButton(
-                              icon: const Icon(Icons.move_up_outlined , color: Colors.orange),
-                              onPressed: () async {
-                                // Show dialog asking if the user wants to turn over the item to OSA
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            if (ticket.ticket != 'success') ...[
+                              IconButton(
+                                icon: const Icon(Icons.edit, color: Colors.blue),
+                                onPressed: (schoolId == '1234567890' || !isTurnedOver)
+                                    ? null
+                                    : () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          EditTicketPage(ticket: ticket),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                            if (schoolId == '1234567890' &&
+                                ticket.ticket != 'success') ...[
+                              IconButton(
+                                icon: const Icon(
+                                    Icons.move_up_outlined, color: Colors.orange),
+                                onPressed: () async {
                                   await showDialog(
-                                  context: context,
-                                  builder: (context) => AlertDialog(
-                                    title: const Text('Turn Over Item'),
-                                    content: const Text('Are you going to turn over this item to OSA?'),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () {
-                                          Navigator.pop(context, false); // User chooses not to turn over
-                                        },
-                                        child: const Text('No'),
-                                      ),
-                                      TextButton(
-                                        onPressed: () {
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      title: const Text('Turn Over Item'),
+                                      content: const Text(
+                                          'Are you going to turn over this item to OSA?'),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () {
                                             _updateTurnOverDetails(
                                               ticket,
                                             );
-                                            Navigator.pop(context); // Close the dialog
-                                        },
-                                        child: const Text('Yes'),
-                                      ),
-                                    ],
-                                  ),
-                                );
-
-                                // Handle the result of the dialog
-
-
-
-                                }
-
-                            ),
+                                            Navigator.pop(
+                                                context); // Close the dialog
+                                          },
+                                          child: const Text('Yes'),
+                                        ),
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.pop(
+                                                context, false); // User chooses not to turn over
+                                          },
+                                          child: const Text('No'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
                           ],
-                        ],
-                      ),
-                      Center(
-                        child: TextButton(
-                          onPressed: (!isTurnedOver || schoolId == '1234567890')
-                              ? () {
-                            if (ticket.ticket == 'pending') {
-                              _showCompletionDialog(context, ticket);
+                        ),
+                        Center(
+                          child: TextButton(
+                            onPressed: (!isTurnedOver ||
+                                schoolId == '1234567890')
+                                ? () {
+                              if (ticket.ticket == 'pending') {
+                                _showCompletionDialog(context, ticket);
+                              }
                             }
-                          }
-                              : null, // Disable button for non-1234567890 users if turned over
-                          style: TextButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            backgroundColor: (!isTurnedOver || schoolId == '1234567890')
-                                ? (ticket.ticket == 'pending'
-                                ? Colors.red // Active for pending tickets
-                                : Colors.green) // Completed tickets
-                                : Colors.grey, // Disabled button for turned over
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                                : null,
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              backgroundColor: (!isTurnedOver ||
+                                  schoolId == '1234567890')
+                                  ? (ticket.ticket == 'pending'
+                                  ? Colors.red
+                                  : Colors.green)
+                                  : Colors.grey,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 5),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
                             ),
-                          ),
-                          child: Text(
-                            isTurnedOver && schoolId != '1234567890'
-                                ? "Turned Over"
-                                : (ticket.ticket == 'pending' ? "Mark as Completed" : "Completed"),
-                            style: const TextStyle(fontSize: 10),
+                            child: Text(
+                              isTurnedOver && schoolId != '1234567890'
+                                  ? "Turned Over"
+                                  : (ticket.ticket == 'pending'
+                                  ? "Mark as Completed"
+                                  : "Completed"),
+                              style: const TextStyle(fontSize: 10),
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
@@ -384,15 +401,15 @@ class _MyTicketPageState extends State<MyTicketPage> with SingleTickerProviderSt
             TextButton(
               onPressed: () {
                 Navigator.pop(context); // Close the dialog
+                _showClaimDialog(context, ticket); // Show the claim details dialog
               },
-              child: const Text('No'),
+              child: const Text('Yes'),
             ),
             TextButton(
               onPressed: () {
                 Navigator.pop(context); // Close the dialog
-                _showClaimDialog(context, ticket); // Show the claim details dialog
               },
-              child: const Text('Yes'),
+              child: const Text('No'),
             ),
           ],
         );
@@ -488,14 +505,16 @@ class _MyTicketPageState extends State<MyTicketPage> with SingleTickerProviderSt
 
 
 void _updateTicketWithClaimDetails(Ticket ticket, String claimerId, String yearSection, String claimerName, String contactNumber) async {
-    try {
+  String? dateCompleted = DateFormat('MMM dd, yyyy, hh:mm a').format(DateTime.now()); // Set to current date and time
+
+  try {
       await FirebaseFirestore.instance.collection('CompletedClaims').doc(ticket.id).set({
         'studentId': claimerId,
         'itemId': ticket.id,
         'name': claimerName,
         'yearSection': yearSection,
         'contactNumber': contactNumber,
-
+        'dateCompleted': dateCompleted
 
       });
       await FirebaseFirestore.instance.collection('items').doc(ticket.id).update({
@@ -806,12 +825,6 @@ class _EditTicketPageState extends State<EditTicketPage> {
             actions: <Widget>[
               TextButton(
                 onPressed: () {
-                  Navigator.of(context).pop(); // Close the dialog
-                },
-                child: const Text("Cancel"),
-              ),
-              TextButton(
-                onPressed: () {
                   // Proceed with saving changes if the user confirms
                   if (_formKey.currentState!.validate()) {
                     _formKey.currentState!.save();
@@ -821,6 +834,13 @@ class _EditTicketPageState extends State<EditTicketPage> {
                 },
                 child: const Text("Yes, Edit"),
               ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close the dialog
+                },
+                child: const Text("Cancel"),
+              ),
+
             ],
           );
         },

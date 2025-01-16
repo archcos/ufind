@@ -136,6 +136,7 @@ class ItemDetailsPage extends StatelessWidget {
                             builder: (context) => InitialChatPage(
                               userId: senderId,
                               receiverId: ticket.id.toString().substring(0, 10),  // Extract the first 10 digits
+                              itemName: ticket.name,
                               itemType: ticket.status,
                             ),
                           ),
@@ -204,7 +205,7 @@ class ItemDetailsPage extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Ticket ID: ${ticket.id.substring(11)}',
+                            'Item ID: ${ticket.id.substring(11)}',
                             style: const TextStyle(
                               fontSize: 14,
                               color: Colors.black54,

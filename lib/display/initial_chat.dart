@@ -6,9 +6,10 @@ import 'package:intl/intl.dart';
 class InitialChatPage extends StatefulWidget {
   final String userId;
   final String receiverId;
+  final String itemName;
   final String itemType;
 
-  InitialChatPage({required this.userId, required this.receiverId, required this.itemType});
+  InitialChatPage({required this.userId, required this.receiverId, required this.itemName, required this.itemType});
 
   @override
   _InitialChatPageState createState() => _InitialChatPageState();
@@ -159,7 +160,7 @@ class _InitialChatPageState extends State<InitialChatPage> {
                   await sendMessage(
                     widget.userId,
                     widget.receiverId,
-                    'PROVIDED ITEM DETAILS: \nDescription: $description\nTime Lost: $time',
+                    'PROVIDED ITEM DETAILS: \nItem Name: ${widget.itemName}\nDescription: $description\nTime Lost: $time',
                   );
 
                   setState(() {

@@ -74,22 +74,42 @@ class MyItemDetailsPage extends StatelessWidget {
                           placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
                           errorWidget: (context, url, error) => const Icon(Icons.error),
                         ),
-                        if (ticket.status != 'lost')
-                          Positioned.fill(
-                            child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 15.0, sigmaY: 15.0), // Apply blur
-                              child: Container(
-                                color: Colors.black.withOpacity(0.1),
-                              ),
-                            ),
-                          ),
                       ],
                     ),
                   ),
                 ),
               const SizedBox(height: 8),
               Center(
-                child: ticket.claimStatus.startsWith('turnover')
+                child: ticket.ticket == 'success'  // Check if the ticket status is 'success'
+                    ? ElevatedButton.icon(
+                  onPressed: () {
+
+                  },
+                  icon: const Icon(
+                    Icons.check_circle,  // Completed icon
+                    size: 18,
+                    color: Colors.white,
+                  ),
+                  label: const Text(
+                    "Completed",  // Change the label to "Completed"
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.1,  // Slight letter spacing for readability
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.white,  // Text color
+                    backgroundColor: Colors.green,  // Green color for "Completed" button
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),  // Enhanced padding
+                    elevation: 6,  // Shadow effect for better visibility
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25),  // Smooth rounded corners
+                    ),
+                    minimumSize: const Size(50, 40),  // Minimum button size
+                  ),
+                )
+                    : ticket.claimStatus.startsWith('turnover')
                     ? Container(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   decoration: BoxDecoration(
@@ -121,12 +141,12 @@ class MyItemDetailsPage extends StatelessWidget {
                     );
                   },
                   icon: const Icon(
-                    Icons.edit, // Add an edit icon
-                    size: 18, // Icon size
-                    color: Colors.white, // Icon color
+                    Icons.edit,  // Add an edit icon
+                    size: 18,  // Icon size
+                    color: Colors.white,  // Icon color
                   ),
                   label: const Text(
-                    "Edit Ticket",
+                    "Edit Item Details",
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -134,14 +154,14 @@ class MyItemDetailsPage extends StatelessWidget {
                     ),
                   ),
                   style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.white, // Text color
-                    backgroundColor: Colors.lightBlueAccent, // Button background color
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12), // Enhanced padding
-                    elevation: 6, // Shadow effect for better visibility
+                    foregroundColor: Colors.white,  // Text color
+                    backgroundColor: Colors.lightBlueAccent,  // Button background color
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),  // Enhanced padding
+                    elevation: 6,  // Shadow effect for better visibility
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(25), // Smooth rounded corners
+                      borderRadius: BorderRadius.circular(25),  // Smooth rounded corners
                     ),
-                    minimumSize: const Size(50, 40), // Minimum button size
+                    minimumSize: const Size(50, 40),  // Minimum button size
                   ),
                 ),
               ),
@@ -186,7 +206,7 @@ class MyItemDetailsPage extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Ticket ID: ${ticket.id.substring(11)}',
+                            'Item ID: ${ticket.id.substring(11)}',
                             style: const TextStyle(
                               fontSize: 14,
                               color: Colors.black54,

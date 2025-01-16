@@ -324,7 +324,7 @@ class _ItemsListPageState extends State<ItemsListPage> with SingleTickerProvider
                                           child: BackdropFilter(
                                             filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
                                             child: Container(
-                                              color: Colors.black.withOpacity(0.7),
+                                              color: Colors.black.withOpacity(0.1),
                                             ),
                                           ),
                                         ),

@@ -103,9 +103,11 @@ class _ProfilePageState extends State<ProfilePage> {
           child: Column(
             children: [
               // Profile picture section (Just a placeholder here)
-              const CircleAvatar(
+              CircleAvatar(
                 radius: 50,
-                backgroundImage: AssetImage('assets/images/profile.jpg'), // Replace with actual image
+                backgroundImage: userId == 1234567890
+                    ? const AssetImage('assets/images/profile.jpg') // Image for userId 1234567890
+                    : const AssetImage('assets/images/profile-guard.png'), // Default image for other users
               ),
               const SizedBox(height: 16),
 

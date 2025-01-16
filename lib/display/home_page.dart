@@ -112,28 +112,45 @@ class HomePage extends StatelessWidget {
             child: ListView(
               padding: EdgeInsets.zero,
               children: <Widget>[
-                // Drawer Header with profile image
                 DrawerHeader(
                   decoration: const BoxDecoration(
                     color: Colors.lightBlueAccent,
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const CircleAvatar(
-                        radius: 40,
-                        backgroundImage: AssetImage('assets/images/profile.jpg'), // Replace with your logo
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        'Welcome, $fullName', // Display the full name
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
+                  child: FutureBuilder<String>(
+                    future: _getUserId(), // Fetch the userId
+                    builder: (context, userIdSnapshot) {
+                      if (userIdSnapshot.connectionState == ConnectionState.waiting ||
+                          userIdSnapshot.hasError || !userIdSnapshot.hasData) {
+                        return const CircleAvatar(
+                          radius: 40,
+                          backgroundImage: AssetImage('assets/images/profile.jpg'),
+                        );
+                      }
+
+                      String userId = userIdSnapshot.data ?? '';
+                      String imagePath = userId == '1234567890'
+                          ? 'assets/images/profile-guard.png' // Custom image for this userId
+                          : 'assets/images/profile.jpg'; // Default image for other users
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          CircleAvatar(
+                            radius: 40,
+                            backgroundImage: AssetImage(imagePath), // Set the image based on userId
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            'Welcome, $fullName',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ),
                 ListTile(

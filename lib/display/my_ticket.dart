@@ -222,7 +222,6 @@ class _MyTicketPageState extends State<MyTicketPage> with SingleTickerProviderSt
         return GestureDetector(
           onTap: () {
             // Navigate to MyItemDetailsPage when the card is tapped
-            print('Ticket tapped: ${ticket.name}');
             Navigator.push(
               context,
               MaterialPageRoute(
